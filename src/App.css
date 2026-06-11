@@ -22,6 +22,15 @@ body {
   border: 1px solid #e0e6ef;
 }
 
+.thank-you-card {
+  min-height: 290px;
+}
+
+.thank-you-card p {
+  font-size: 18px;
+  line-height: 1.5;
+}
+
 h1 {
   margin: 0 0 34px;
   color: #233d5a;

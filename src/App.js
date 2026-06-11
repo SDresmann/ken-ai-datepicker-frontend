@@ -46,6 +46,7 @@ function App() {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(emptyForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const updateField = (name, value) => {
     setForm((current) => ({ ...current, [name]: value }));
@@ -89,7 +90,7 @@ function App() {
       };
       const response = await axios.post(`${API_URL}/api/bookings`, payload);
       console.log('Booked:', response.data, form);
-      alert('Form submitted and class date booked.');
+      setIsSubmitted(true);
     } catch (error) {
       console.error('Submission failed:', error);
       alert('The form submitted locally, but booking the class date failed. Please check the console.');
@@ -297,6 +298,12 @@ function App() {
 
   return (
     <main className="app-shell">
+      {isSubmitted ? (
+        <section className="survey-card thank-you-card">
+          <h1>Thank you for submitting</h1>
+          <p>We received your form and booked your selected class date.</p>
+        </section>
+      ) : (
       <form className="survey-card" onSubmit={handleSubmit}>
         <h1>KA | Ready.Set.Hire. Survey</h1>
         <div className="step-content">{renderStep()}</div>
@@ -317,6 +324,7 @@ function App() {
           )}
         </div>
       </form>
+      )}
     </main>
   );
 }
