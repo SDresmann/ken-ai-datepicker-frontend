@@ -5,7 +5,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import './App.css';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = 'https://ken-ai-datepicker-backend.onrender.com' || 'http://localhost:5000';
 
 function App() {
   const [classDate, setClassDate] = useState(null);
