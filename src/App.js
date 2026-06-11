@@ -169,16 +169,21 @@ function App() {
           </>
         );
       case 2:
+        const isFinishingHighSchool = form.are_you_still_finishing_high_school === 'Yes';
         return (
           <>
             <h2 className="section-heading">School Info</h2>
             {renderSelect('are_you_still_finishing_high_school', 'Are you still finishing High School?', yesNo)}
-            <label className="field">
-              <span>What&apos;s the full name of your school?<sup>*</sup></span>
-              <small>Please don&apos;t put initials. Put &quot;homeschooling&quot; if you are in homeschool.</small>
-              <input name="whats_the_full_name_of_your_school" value={form.whats_the_full_name_of_your_school} onChange={(e) => updateField('whats_the_full_name_of_your_school', e.target.value)} required />
-            </label>
-            {renderSelect('what_grade_are_you_currently_in', 'What Grade are you currently in?', ['9th', '10th', '11th', '12th', 'Graduated', 'Not applicable'])}
+            {isFinishingHighSchool && (
+              <>
+                <label className="field">
+                  <span>What&apos;s the full name of your school?<sup>*</sup></span>
+                  <small>Please don&apos;t put initials. Put &quot;homeschooling&quot; if you are in homeschool.</small>
+                  <input name="whats_the_full_name_of_your_school" value={form.whats_the_full_name_of_your_school} onChange={(e) => updateField('whats_the_full_name_of_your_school', e.target.value)} required />
+                </label>
+                {renderSelect('what_grade_are_you_currently_in', 'What Grade are you currently in?', ['9th', '10th', '11th', '12th', 'Graduated', 'Not applicable'])}
+              </>
+            )}
             {renderSelect('highest_level_of_education_', 'Highest level of education?', ['Some high school', 'High school diploma/GED', 'Some college', 'Associate degree', 'Bachelor degree', 'Other'])}
           </>
         );
@@ -204,41 +209,51 @@ function App() {
           </>
         );
       case 4:
+        const isParent = form.are_you_a_parent === 'Yes';
         return (
           <>
             <h2 className="section-heading">Parent Status</h2>
             {renderSelect('are_you_a_parent', 'Are you a Parent?', yesNo)}
-            <label className="field">
-              <span>How many children do you have?<sup>*</sup></span>
-              <input name="how_many_children_do_you_have" value={form.how_many_children_do_you_have} onChange={(e) => updateField('how_many_children_do_you_have', e.target.value)} required />
-            </label>
-            {renderSelect('are_you_a_single_parent', 'Are you a Single Parent?', yesNo)}
+            {isParent && (
+              <>
+                <label className="field">
+                  <span>How many children do you have?<sup>*</sup></span>
+                  <input name="how_many_children_do_you_have" value={form.how_many_children_do_you_have} onChange={(e) => updateField('how_many_children_do_you_have', e.target.value)} required />
+                </label>
+                {renderSelect('are_you_a_single_parent', 'Are you a Single Parent?', yesNo)}
+              </>
+            )}
           </>
         );
       case 5:
+        const isJusticeInvolved = form.are_you_involved_in_the_justice_system === 'Yes';
         return (
           <>
             {renderSelect('are_you_involved_in_the_justice_system', 'Are you involved in the Justice System?', yesNo)}
-            {renderCheckboxGroup('what_is_your_status_in_the_justice_system_check_all_that_apply', 'What is your status in the Justice System (check all that apply)?', [
-              'Not Applicable - not justice Involved',
-              'Adult Correctional Facility',
-              'Juvenile Detention Facility',
-              'Probation/Parole',
-              'Diversion',
-              'At-Risk',
-              'Other Court Contact',
-            ])}
-            {renderCheckboxGroup('what_is_your_offense_status_check_all_that_apply', 'What is your offense status (check all that apply)?', [
-              'Not Applicable - not justice Involved',
-              'No Offense/At Risk',
-              'First time offense',
-              'Repeated offenses',
-            ])}
-            {renderCheckboxGroup('what_is_your_system_level_check_all_that_apply', 'What is your System Level (check all that apply)?', [
-              'Not Applicable - not justice involved',
-              'Adult',
-              'Juvenile',
-            ])}
+            {isJusticeInvolved && (
+              <>
+                {renderCheckboxGroup('what_is_your_status_in_the_justice_system_check_all_that_apply', 'What is your status in the Justice System (check all that apply)?', [
+                  'Not Applicable - not justice Involved',
+                  'Adult Correctional Facility',
+                  'Juvenile Detention Facility',
+                  'Probation/Parole',
+                  'Diversion',
+                  'At-Risk',
+                  'Other Court Contact',
+                ])}
+                {renderCheckboxGroup('what_is_your_offense_status_check_all_that_apply', 'What is your offense status (check all that apply)?', [
+                  'Not Applicable - not justice Involved',
+                  'No Offense/At Risk',
+                  'First time offense',
+                  'Repeated offenses',
+                ])}
+                {renderCheckboxGroup('what_is_your_system_level_check_all_that_apply', 'What is your System Level (check all that apply)?', [
+                  'Not Applicable - not justice involved',
+                  'Adult',
+                  'Juvenile',
+                ])}
+              </>
+            )}
           </>
         );
       case 6:
