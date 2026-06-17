@@ -9,6 +9,8 @@ const API_URL = 'https://ken-ai-datepicker-backend.onrender.com';
 const TOTAL_STEPS = 6;
 
 const emptyForm = {
+  first_name: '',
+  last_name: '',
   email: '',
   address: '',
   city: '',
@@ -46,6 +48,7 @@ function App() {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(emptyForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingStepOne, setIsSavingStepOne] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const updateField = (name, value) => {
@@ -67,7 +70,49 @@ function App() {
     return day >= 2 && day <= 5;
   };
 
-  const goNext = () => setStep((current) => Math.min(current + 1, TOTAL_STEPS));
+  const syncStepOneToHubSpot = async () => {
+    const date = moment(form.class_date).format('YYYY-MM-DD');
+    const payload = {
+      first_name: form.first_name,
+      last_name: form.last_name,
+      email: form.email,
+      address: form.address,
+      city: form.city,
+      fullname_state: form.fullname_state,
+      zip: form.zip,
+      what_gender_do_you_identify_as_: form.what_gender_do_you_identify_as_,
+      what_is_your_racial_and_ethnic_identity_: form.what_is_your_racial_and_ethnic_identity_,
+      class_date: date,
+    };
+
+    await axios.post(`${API_URL}/api/bookings/hubspot-step-one`, payload);
+  };
+
+  const goNext = async (event) => {
+    if (step !== 1) {
+      setStep((current) => Math.min(current + 1, TOTAL_STEPS));
+      return;
+    }
+
+    const formElement = event.currentTarget.form;
+    if (!formElement.reportValidity()) return;
+
+    if (!form.class_date) {
+      alert('Please choose a class date.');
+      return;
+    }
+
+    try {
+      setIsSavingStepOne(true);
+      await syncStepOneToHubSpot();
+      setStep((current) => Math.min(current + 1, TOTAL_STEPS));
+    } catch (error) {
+      console.error('HubSpot sync failed:', error);
+      alert('We could not add this first page to HubSpot. Please check the console and try again.');
+    } finally {
+      setIsSavingStepOne(false);
+    }
+  };
   const goBack = () => setStep((current) => Math.max(current - 1, 1));
 
   const handleSubmit = async (event) => {
@@ -132,6 +177,16 @@ function App() {
       case 1:
         return (
           <>
+            <div className="two-column">
+              <label className="field">
+                <span>First Name<sup>*</sup></span>
+                <input name="first_name" value={form.first_name} onChange={(e) => updateField('first_name', e.target.value)} required />
+              </label>
+              <label className="field">
+                <span>Last Name<sup>*</sup></span>
+                <input name="last_name" value={form.last_name} onChange={(e) => updateField('last_name', e.target.value)} required />
+              </label>
+            </div>
             <label className="field">
               <span>Email<sup>*</sup></span>
               <input name="email" type="email" value={form.email} onChange={(e) => updateField('email', e.target.value)} required />
@@ -305,7 +360,7 @@ function App() {
         </section>
       ) : (
       <form className="survey-card" onSubmit={handleSubmit}>
-        <h1>KA | Ready.Set.Hire. Survey</h1>
+        <h1>KA | Ready.Set.Hire.</h1>
         <div className="step-content">{renderStep()}</div>
         <div className="progress-label">{step}/{TOTAL_STEPS}</div>
         <div className="progress-bar">
@@ -316,7 +371,9 @@ function App() {
             <button type="button" onClick={goBack}>Previous</button>
           ) : <span />}
           {step < TOTAL_STEPS ? (
-            <button type="button" onClick={goNext}>Next</button>
+            <button type="button" onClick={goNext} disabled={isSavingStepOne}>
+              {isSavingStepOne ? 'Saving...' : 'Next'}
+            </button>
           ) : (
             <button type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Submitting...' : 'Submit'}
