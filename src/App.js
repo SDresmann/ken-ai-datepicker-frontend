@@ -12,6 +12,7 @@ const emptyForm = {
   first_name: '',
   last_name: '',
   email: '',
+  phone: '+1 ',
   address: '',
   city: '',
   fullname_state: '',
@@ -19,6 +20,8 @@ const emptyForm = {
   what_gender_do_you_identify_as_: '',
   what_is_your_racial_and_ethnic_identity_: '',
   class_date: null,
+  class_date_option_2: null,
+  class_date_option_3: null,
   are_you_still_finishing_high_school: '',
   whats_the_full_name_of_your_school: '',
   what_grade_are_you_currently_in: '',
@@ -43,6 +46,7 @@ const states = ['OH', 'KY', 'IN', 'MI', 'PA', 'Other'];
 const genderOptions = ['Female', 'Male', 'Non-binary', 'Prefer not to say', 'Other'];
 const ethnicityOptions = ['American Indian or Alaska Native', 'Asian', 'Black or African American', 'Hispanic or Latino', 'White', 'Two or more races', 'Prefer not to say'];
 const yesNo = ['Yes', 'No'];
+const noneOption = 'NONE OF THESE APPLY TO ME';
 
 function App() {
   const [step, setStep] = useState(1);
@@ -55,12 +59,25 @@ function App() {
     setForm((current) => ({ ...current, [name]: value }));
   };
 
+  const updatePhoneNumber = (value) => {
+    const digits = value.replace(/\D/g, '').replace(/^1/, '').slice(0, 10);
+    updateField('phone', `+1 ${digits}`);
+  };
+
   const toggleCheckboxGroup = (name, value) => {
     setForm((current) => {
       const currentValues = current[name];
-      const nextValues = currentValues.includes(value)
-        ? currentValues.filter((item) => item !== value)
-        : [...currentValues, value];
+      let nextValues;
+
+      if (value === noneOption) {
+        nextValues = currentValues.includes(value) ? [] : [value];
+      } else {
+        const valuesWithoutNone = currentValues.filter((item) => item !== noneOption);
+        nextValues = valuesWithoutNone.includes(value)
+          ? valuesWithoutNone.filter((item) => item !== value)
+          : [...valuesWithoutNone, value];
+      }
+
       return { ...current, [name]: nextValues };
     });
   };
@@ -70,12 +87,29 @@ function App() {
     return day >= 2 && day <= 5;
   };
 
+  const updateClassDate = (date) => {
+    const needsExtraOptions = date && date.getDay() >= 2 && date.getDay() <= 4;
+    setForm((current) => ({
+      ...current,
+      class_date: date,
+      class_date_option_2: needsExtraOptions ? current.class_date_option_2 : null,
+      class_date_option_3: needsExtraOptions ? current.class_date_option_3 : null,
+    }));
+  };
+
+  const needsAdditionalClassDates = () => {
+    if (!form.class_date) return false;
+    const day = form.class_date.getDay();
+    return day >= 2 && day <= 4;
+  };
+
   const syncStepOneToHubSpot = async () => {
     const date = moment(form.class_date).format('YYYY-MM-DD');
     const payload = {
       first_name: form.first_name,
       last_name: form.last_name,
       email: form.email,
+      phone: form.phone,
       address: form.address,
       city: form.city,
       fullname_state: form.fullname_state,
@@ -83,9 +117,13 @@ function App() {
       what_gender_do_you_identify_as_: form.what_gender_do_you_identify_as_,
       what_is_your_racial_and_ethnic_identity_: form.what_is_your_racial_and_ethnic_identity_,
       class_date: date,
+      class_date_option_2: form.class_date_option_2 ? moment(form.class_date_option_2).format('YYYY-MM-DD') : '',
+      class_date_option_3: form.class_date_option_3 ? moment(form.class_date_option_3).format('YYYY-MM-DD') : '',
     };
 
-    await axios.post(`${API_URL}/api/bookings/hubspot-step-one`, payload);
+    console.log('HubSpot page one payload:', payload);
+    const response = await axios.post(`${API_URL}/api/bookings/hubspot-step-one`, payload);
+    console.log('HubSpot page one saved:', response.data);
   };
 
   const goNext = async (event) => {
@@ -99,6 +137,11 @@ function App() {
 
     if (!form.class_date) {
       alert('Please choose a class date.');
+      return;
+    }
+
+    if (needsAdditionalClassDates() && (!form.class_date_option_2 || !form.class_date_option_3)) {
+      alert('Please choose both additional class date options.');
       return;
     }
 
@@ -131,6 +174,8 @@ function App() {
         ...form,
         date,
         class_date: date,
+        class_date_option_2: form.class_date_option_2 ? moment(form.class_date_option_2).format('YYYY-MM-DD') : '',
+        class_date_option_3: form.class_date_option_3 ? moment(form.class_date_option_3).format('YYYY-MM-DD') : '',
         date_signed: form.date_signed ? moment(form.date_signed).format('YYYY-MM-DD') : '',
       };
       const response = await axios.post(`${API_URL}/api/bookings`, payload);
@@ -156,25 +201,31 @@ function App() {
     </label>
   );
 
-  const renderCheckboxGroup = (name, label, options) => (
-    <div className="field checkbox-group">
-      <span>{label}<sup>*</sup></span>
-      {options.map((option) => (
-        <label key={option} className="checkbox-row">
-          <input
-            type="checkbox"
-            checked={form[name].includes(option)}
-            onChange={() => toggleCheckboxGroup(name, option)}
-          />
-          {option}
-        </label>
-      ))}
-    </div>
-  );
+  const renderCheckboxGroup = (name, label, options) => {
+    const selectedNone = form[name].includes(noneOption);
+    const visibleOptions = selectedNone ? options.filter((option) => option === noneOption) : options;
+
+    return (
+      <div className="field checkbox-group">
+        <span>{label}<sup>*</sup></span>
+        {visibleOptions.map((option) => (
+          <label key={option} className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={form[name].includes(option)}
+              onChange={() => toggleCheckboxGroup(name, option)}
+            />
+            {option}
+          </label>
+        ))}
+      </div>
+    );
+  };
 
   const renderStep = () => {
     switch (step) {
       case 1:
+        const showAdditionalClassDates = needsAdditionalClassDates();
         return (
           <>
             <div className="two-column">
@@ -190,6 +241,19 @@ function App() {
             <label className="field">
               <span>Email<sup>*</sup></span>
               <input name="email" type="email" value={form.email} onChange={(e) => updateField('email', e.target.value)} required />
+            </label>
+            <label className="field">
+              <span>Phone Number<sup>*</sup></span>
+              <input
+                name="phone"
+                type="tel"
+                value={form.phone}
+                onChange={(e) => updatePhoneNumber(e.target.value)}
+                pattern="\+1 \d{10}"
+                title="Enter a US phone number with +1 followed by 10 digits."
+                required
+              />
+              <small>US numbers only. Example: +1 5135551234</small>
             </label>
             <label className="field">
               <span>Street Address<sup>*</sup></span>
@@ -212,7 +276,7 @@ function App() {
               <span>Class Date<sup>*</sup></span>
               <DatePicker
                 selected={form.class_date}
-                onChange={(date) => updateField('class_date', date)}
+                onChange={updateClassDate}
                 dateFormat="MM-dd-yyyy"
                 filterDate={isAllowedDate}
                 className="form-control"
@@ -222,6 +286,36 @@ function App() {
               />
               <small>Choose Tuesday, Wednesday, Thursday, or Friday.</small>
             </label>
+            {showAdditionalClassDates && (
+              <div className="two-column">
+                <label className="field">
+                  <span>Additional Class Date Option 1<sup>*</sup></span>
+                  <DatePicker
+                    selected={form.class_date_option_2}
+                    onChange={(date) => updateField('class_date_option_2', date)}
+                    dateFormat="MM-dd-yyyy"
+                    filterDate={isAllowedDate}
+                    className="form-control"
+                    placeholderText="MM - DD - YYYY"
+                    minDate={new Date()}
+                    required
+                  />
+                </label>
+                <label className="field">
+                  <span>Additional Class Date Option 2<sup>*</sup></span>
+                  <DatePicker
+                    selected={form.class_date_option_3}
+                    onChange={(date) => updateField('class_date_option_3', date)}
+                    dateFormat="MM-dd-yyyy"
+                    filterDate={isAllowedDate}
+                    className="form-control"
+                    placeholderText="MM - DD - YYYY"
+                    minDate={new Date()}
+                    required
+                  />
+                </label>
+              </div>
+            )}
           </>
         );
       case 2:
@@ -237,10 +331,32 @@ function App() {
                   <small>Please don&apos;t put initials. Put &quot;homeschooling&quot; if you are in homeschool.</small>
                   <input name="whats_the_full_name_of_your_school" value={form.whats_the_full_name_of_your_school} onChange={(e) => updateField('whats_the_full_name_of_your_school', e.target.value)} required />
                 </label>
-                {renderSelect('what_grade_are_you_currently_in', 'What Grade are you currently in?', ['9th', '10th', '11th', '12th', 'Graduated', 'Not applicable'])}
+                <label className="field">
+                  <span>What Grade are you currently in?<sup>*</sup></span>
+                  <small>(If you are completing this form during summer break, please mark the grade you will be starting in August.)</small>
+                  <select value={form.what_grade_are_you_currently_in} onChange={(e) => updateField('what_grade_are_you_currently_in', e.target.value)} required>
+                    <option value=""></option>
+                    {['10th', '11th', '12th'].map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </label>
               </>
             )}
-            {renderSelect('highest_level_of_education_', 'Highest level of education?', ['Some high school', 'High school diploma/GED', 'Some college', 'Associate degree', 'Bachelor degree', 'Other'])}
+            {renderSelect('highest_level_of_education_', 'Highest level of education?', [
+              '8th grade or below',
+              '9th grade',
+              '10th grade',
+              '11th grade',
+              '12th grade - no diploma',
+              'High School Diploma',
+              'GED',
+              'Vocational Training',
+              'Some college - no degree',
+              'Associate Degree',
+              'Bachelor Degree',
+              "Master's degree",
+            ])}
           </>
         );
       case 3:
@@ -274,7 +390,15 @@ function App() {
               <>
                 <label className="field">
                   <span>How many children do you have?<sup>*</sup></span>
-                  <input name="how_many_children_do_you_have" value={form.how_many_children_do_you_have} onChange={(e) => updateField('how_many_children_do_you_have', e.target.value)} required />
+                  <input
+                    name="how_many_children_do_you_have"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={form.how_many_children_do_you_have}
+                    onChange={(e) => updateField('how_many_children_do_you_have', e.target.value)}
+                    required
+                  />
                 </label>
                 {renderSelect('are_you_a_single_parent', 'Are you a Single Parent?', yesNo)}
               </>
@@ -343,7 +467,13 @@ function App() {
                 />
               </label>
             </div>
-            {renderSelect('whats_your_employment_status_pick_only_1', "What's Your Employment Status? (Pick Only 1)", ['Employed full-time', 'Employed part-time', 'Unemployed', 'Student', 'Other'])}
+            {renderSelect('whats_your_employment_status_pick_only_1', "What's Your Employment Status? (Pick Only 1)", [
+              "I'm Working 1 Full-Time Job",
+              "I'm Working 1 Part-Time Job",
+              "I'm Working 2 or more Part-Time Jobs",
+              "I'm working but not getting enough hours or making what I should be making for my education and skills.",
+              "I'm NOT working but I want to work",
+            ])}
           </>
         );
       default:
