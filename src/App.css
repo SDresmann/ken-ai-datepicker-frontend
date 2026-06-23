@@ -22,6 +22,22 @@ body {
   border: 1px solid #e0e6ef;
 }
 
+.form-error {
+  margin-top: 20px;
+  padding: 14px 16px;
+  background: #fff5f5;
+  border: 1px solid #f5c2c7;
+  color: #842029;
+}
+
+.form-error pre {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 13px;
+}
+
 .thank-you-card {
   min-height: 290px;
 }

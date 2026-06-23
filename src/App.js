@@ -23,8 +23,8 @@ const emptyForm = {
   what_gender_do_you_identify_as_: '',
   what_is_your_racial_and_ethnic_identity_: '',
   class_date: null,
-  choose_your_2nd_date_for_career_readiness: null,
-  choose_your_3rd_date_for_career_readiness: null,
+  choose_the_2nd_date_for_your_career_readiness_class_work: null,
+  choose_the_3rd_date_for_your_career_readiness_class_work: null,
   are_you_still_finishing_high_school: '',
   whats_the_full_name_of_your_school: '',
   what_grade_are_you_currently_in: '',
@@ -52,11 +52,27 @@ const yesNo = ['Yes', 'No'];
 const noneOption = 'NONE OF THESE APPLY TO ME';
 const maxCareerReadinessDate = new Date(new Date().getFullYear(), 6, 2);
 
+function formatHubSpotError(error) {
+  const data = error?.response?.data || {};
+  const hubspotErrors = (data.hubspotErrors || data.hubspot?.errors || [])
+    .map((entry) => entry.message)
+    .filter(Boolean);
+
+  return [
+    data.step && `Step: ${data.step}`,
+    data.detail || data.message,
+    hubspotErrors.length ? `HubSpot: ${hubspotErrors.join(' | ')}` : null,
+    data.attemptedPayload ? `Payload sent: ${JSON.stringify(data.attemptedPayload)}` : null,
+    data.skippedProperties?.length ? `Skipped properties: ${data.skippedProperties.join(', ')}` : null,
+  ].filter(Boolean).join('\n\n');
+}
+
 function App() {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(emptyForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingStepOne, setIsSavingStepOne] = useState(false);
+  const [hubspotError, setHubspotError] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const updateField = (name, value) => {
@@ -98,8 +114,8 @@ function App() {
 
   const isAllowedThirdClassDate = (date) => {
     if (!isAllowedAdditionalClassDate(date)) return false;
-    if (!form.choose_your_2nd_date_for_career_readiness) return true;
-    return date.getDay() !== form.choose_your_2nd_date_for_career_readiness.getDay();
+    if (!form.choose_the_2nd_date_for_your_career_readiness_class_work) return true;
+    return date.getDay() !== form.choose_the_2nd_date_for_your_career_readiness_class_work.getDay();
   };
 
   const updateClassDate = (date) => {
@@ -107,19 +123,19 @@ function App() {
     setForm((current) => ({
       ...current,
       class_date: date,
-      choose_your_2nd_date_for_career_readiness: needsExtraOptions ? current.choose_your_2nd_date_for_career_readiness : null,
-      choose_your_3rd_date_for_career_readiness: needsExtraOptions ? current.choose_your_3rd_date_for_career_readiness : null,
+      choose_the_2nd_date_for_your_career_readiness_class_work: needsExtraOptions ? current.choose_the_2nd_date_for_your_career_readiness_class_work : null,
+      choose_the_3rd_date_for_your_career_readiness_class_work: needsExtraOptions ? current.choose_the_3rd_date_for_your_career_readiness_class_work : null,
     }));
   };
 
   const updateSecondClassDate = (date) => {
     setForm((current) => ({
       ...current,
-      choose_your_2nd_date_for_career_readiness: date,
-      choose_your_3rd_date_for_career_readiness:
-        current.choose_your_3rd_date_for_career_readiness && date && current.choose_your_3rd_date_for_career_readiness.getDay() === date.getDay()
+      choose_the_2nd_date_for_your_career_readiness_class_work: date,
+      choose_the_3rd_date_for_your_career_readiness_class_work:
+        current.choose_the_3rd_date_for_your_career_readiness_class_work && date && current.choose_the_3rd_date_for_your_career_readiness_class_work.getDay() === date.getDay()
           ? null
-          : current.choose_your_3rd_date_for_career_readiness,
+          : current.choose_the_3rd_date_for_your_career_readiness_class_work,
     }));
   };
 
@@ -184,13 +200,17 @@ function App() {
       what_gender_do_you_identify_as_: form.what_gender_do_you_identify_as_,
       what_is_your_racial_and_ethnic_identity_: form.what_is_your_racial_and_ethnic_identity_,
       class_date: date,
-      choose_your_2nd_date_for_career_readiness: form.choose_your_2nd_date_for_career_readiness ? moment(form.choose_your_2nd_date_for_career_readiness).format('YYYY-MM-DD') : '',
-      choose_your_3rd_date_for_career_readiness: form.choose_your_3rd_date_for_career_readiness ? moment(form.choose_your_3rd_date_for_career_readiness).format('YYYY-MM-DD') : '',
+      choose_the_2nd_date_for_your_career_readiness_class_work: form.choose_the_2nd_date_for_your_career_readiness_class_work ? moment(form.choose_the_2nd_date_for_your_career_readiness_class_work).format('YYYY-MM-DD') : '',
+      choose_the_3rd_date_for_your_career_readiness_class_work: form.choose_the_3rd_date_for_your_career_readiness_class_work ? moment(form.choose_the_3rd_date_for_your_career_readiness_class_work).format('YYYY-MM-DD') : '',
     };
 
     console.log('HubSpot page one payload:', payload);
     const response = await axios.post(`${API_URL}/api/bookings/hubspot-step-one`, payload);
     console.log('HubSpot page one saved:', response.data);
+    if (response.data.skippedProperties?.length) {
+      console.warn('HubSpot skipped custom properties:', response.data.skippedProperties);
+    }
+    return response.data;
   };
 
   const goNext = async (event) => {
@@ -208,18 +228,25 @@ function App() {
       return;
     }
 
-    if (needsAdditionalClassDates() && (!form.choose_your_2nd_date_for_career_readiness || !form.choose_your_3rd_date_for_career_readiness)) {
+    if (needsAdditionalClassDates() && (!form.choose_the_2nd_date_for_your_career_readiness_class_work || !form.choose_the_3rd_date_for_your_career_readiness_class_work)) {
       alert('Please choose both additional workshop date options.');
       return;
     }
 
     try {
       setIsSavingStepOne(true);
+      setHubspotError('');
       await syncStepOneToHubSpot();
       setStep((current) => Math.min(current + 1, TOTAL_STEPS));
     } catch (error) {
-      console.error('HubSpot sync failed:', error);
-      alert('We could not add this first page to HubSpot. Please check the console and try again.');
+      const formatted = formatHubSpotError(error);
+      console.group('HubSpot sync failed');
+      console.error('Status:', error.response?.status);
+      console.error('Response:', error.response?.data);
+      console.error('Formatted:', formatted);
+      console.groupEnd();
+      setHubspotError(formatted || 'We could not add this first page to HubSpot. Please check the console and try again.');
+      alert(formatted || 'We could not add this first page to HubSpot. Please check the console and try again.');
     } finally {
       setIsSavingStepOne(false);
     }
@@ -244,8 +271,8 @@ function App() {
         ...form,
         date,
         class_date: date,
-        choose_your_2nd_date_for_career_readiness: form.choose_your_2nd_date_for_career_readiness ? moment(form.choose_your_2nd_date_for_career_readiness).format('YYYY-MM-DD') : '',
-        choose_your_3rd_date_for_career_readiness: form.choose_your_3rd_date_for_career_readiness ? moment(form.choose_your_3rd_date_for_career_readiness).format('YYYY-MM-DD') : '',
+        choose_the_2nd_date_for_your_career_readiness_class_work: form.choose_the_2nd_date_for_your_career_readiness_class_work ? moment(form.choose_the_2nd_date_for_your_career_readiness_class_work).format('YYYY-MM-DD') : '',
+        choose_the_3rd_date_for_your_career_readiness_class_work: form.choose_the_3rd_date_for_your_career_readiness_class_work ? moment(form.choose_the_3rd_date_for_your_career_readiness_class_work).format('YYYY-MM-DD') : '',
         date_of_birth: form.date_of_birth ? moment(form.date_of_birth).format('YYYY-MM-DD') : '',
         date_signed: form.date_signed ? moment(form.date_signed).format('YYYY-MM-DD') : '',
       };
@@ -363,7 +390,7 @@ function App() {
                 <label className="field">
                   <span>Choose the 2nd Date for your Career Readiness Workshop:<sup>*</sup></span>
                   <DatePicker
-                    selected={form.choose_your_2nd_date_for_career_readiness}
+                    selected={form.choose_the_2nd_date_for_your_career_readiness_class_work}
                     onChange={updateSecondClassDate}
                     dateFormat="MM-dd-yyyy"
                     filterDate={isAllowedAdditionalClassDate}
@@ -377,8 +404,8 @@ function App() {
                 <label className="field">
                   <span>Choose the 3rd Date for your Career Readiness Workshop:<sup>*</sup></span>
                   <DatePicker
-                    selected={form.choose_your_3rd_date_for_career_readiness}
-                    onChange={(date) => updateField('choose_your_3rd_date_for_career_readiness', date)}
+                    selected={form.choose_the_3rd_date_for_your_career_readiness_class_work}
+                    onChange={(date) => updateField('choose_the_3rd_date_for_your_career_readiness_class_work', date)}
                     dateFormat="MM-dd-yyyy"
                     filterDate={isAllowedThirdClassDate}
                     className="form-control"
@@ -606,6 +633,12 @@ function App() {
       <form className="survey-card" onSubmit={handleSubmit}>
         <h1>KA | Ready.Set.Hire.</h1>
         <div className="step-content">{renderStep()}</div>
+        {hubspotError ? (
+          <div className="form-error" role="alert">
+            <strong>HubSpot error</strong>
+            <pre>{hubspotError}</pre>
+          </div>
+        ) : null}
         <div className="progress-label">{step}/{TOTAL_STEPS}</div>
         <div className="progress-bar">
           <div style={{ width: `${(step / TOTAL_STEPS) * 100}%` }} />
