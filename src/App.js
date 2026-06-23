@@ -23,8 +23,8 @@ const emptyForm = {
   what_gender_do_you_identify_as_: '',
   what_is_your_racial_and_ethnic_identity_: '',
   class_date: null,
-  class_date_option_2: null,
-  class_date_option_3: null,
+  choose_your_2nd_date_for_career_readiness: null,
+  choose_your_3rd_date_for_career_readiness: null,
   are_you_still_finishing_high_school: '',
   whats_the_full_name_of_your_school: '',
   what_grade_are_you_currently_in: '',
@@ -98,8 +98,8 @@ function App() {
 
   const isAllowedThirdClassDate = (date) => {
     if (!isAllowedAdditionalClassDate(date)) return false;
-    if (!form.class_date_option_2) return true;
-    return date.getDay() !== form.class_date_option_2.getDay();
+    if (!form.choose_your_2nd_date_for_career_readiness) return true;
+    return date.getDay() !== form.choose_your_2nd_date_for_career_readiness.getDay();
   };
 
   const updateClassDate = (date) => {
@@ -107,19 +107,19 @@ function App() {
     setForm((current) => ({
       ...current,
       class_date: date,
-      class_date_option_2: needsExtraOptions ? current.class_date_option_2 : null,
-      class_date_option_3: needsExtraOptions ? current.class_date_option_3 : null,
+      choose_your_2nd_date_for_career_readiness: needsExtraOptions ? current.choose_your_2nd_date_for_career_readiness : null,
+      choose_your_3rd_date_for_career_readiness: needsExtraOptions ? current.choose_your_3rd_date_for_career_readiness : null,
     }));
   };
 
   const updateSecondClassDate = (date) => {
     setForm((current) => ({
       ...current,
-      class_date_option_2: date,
-      class_date_option_3:
-        current.class_date_option_3 && date && current.class_date_option_3.getDay() === date.getDay()
+      choose_your_2nd_date_for_career_readiness: date,
+      choose_your_3rd_date_for_career_readiness:
+        current.choose_your_3rd_date_for_career_readiness && date && current.choose_your_3rd_date_for_career_readiness.getDay() === date.getDay()
           ? null
-          : current.class_date_option_3,
+          : current.choose_your_3rd_date_for_career_readiness,
     }));
   };
 
@@ -184,8 +184,8 @@ function App() {
       what_gender_do_you_identify_as_: form.what_gender_do_you_identify_as_,
       what_is_your_racial_and_ethnic_identity_: form.what_is_your_racial_and_ethnic_identity_,
       class_date: date,
-      class_date_option_2: form.class_date_option_2 ? moment(form.class_date_option_2).format('YYYY-MM-DD') : '',
-      class_date_option_3: form.class_date_option_3 ? moment(form.class_date_option_3).format('YYYY-MM-DD') : '',
+      choose_your_2nd_date_for_career_readiness: form.choose_your_2nd_date_for_career_readiness ? moment(form.choose_your_2nd_date_for_career_readiness).format('YYYY-MM-DD') : '',
+      choose_your_3rd_date_for_career_readiness: form.choose_your_3rd_date_for_career_readiness ? moment(form.choose_your_3rd_date_for_career_readiness).format('YYYY-MM-DD') : '',
     };
 
     console.log('HubSpot page one payload:', payload);
@@ -208,7 +208,7 @@ function App() {
       return;
     }
 
-    if (needsAdditionalClassDates() && (!form.class_date_option_2 || !form.class_date_option_3)) {
+    if (needsAdditionalClassDates() && (!form.choose_your_2nd_date_for_career_readiness || !form.choose_your_3rd_date_for_career_readiness)) {
       alert('Please choose both additional workshop date options.');
       return;
     }
@@ -244,8 +244,8 @@ function App() {
         ...form,
         date,
         class_date: date,
-        class_date_option_2: form.class_date_option_2 ? moment(form.class_date_option_2).format('YYYY-MM-DD') : '',
-        class_date_option_3: form.class_date_option_3 ? moment(form.class_date_option_3).format('YYYY-MM-DD') : '',
+        choose_your_2nd_date_for_career_readiness: form.choose_your_2nd_date_for_career_readiness ? moment(form.choose_your_2nd_date_for_career_readiness).format('YYYY-MM-DD') : '',
+        choose_your_3rd_date_for_career_readiness: form.choose_your_3rd_date_for_career_readiness ? moment(form.choose_your_3rd_date_for_career_readiness).format('YYYY-MM-DD') : '',
         date_of_birth: form.date_of_birth ? moment(form.date_of_birth).format('YYYY-MM-DD') : '',
         date_signed: form.date_signed ? moment(form.date_signed).format('YYYY-MM-DD') : '',
       };
@@ -359,11 +359,11 @@ function App() {
               <small>Tuesday workshops are from 5:00 pm - 6:00 pm cst and Friday workshops are from 2:00 pm - 5:00 pm cst. See below for more details.</small>
             </label>
             {showAdditionalClassDates && (
-              <div className="two-column">
+              <>
                 <label className="field">
-                  <span>Additional Workshop Date Option 1<sup>*</sup></span>
+                  <span>Choose the 2nd Date for your Career Readiness Workshop:<sup>*</sup></span>
                   <DatePicker
-                    selected={form.class_date_option_2}
+                    selected={form.choose_your_2nd_date_for_career_readiness}
                     onChange={updateSecondClassDate}
                     dateFormat="MM-dd-yyyy"
                     filterDate={isAllowedAdditionalClassDate}
@@ -375,10 +375,10 @@ function App() {
                   />
                 </label>
                 <label className="field">
-                  <span>Additional Workshop Date Option 2<sup>*</sup></span>
+                  <span>Choose the 3rd Date for your Career Readiness Workshop:<sup>*</sup></span>
                   <DatePicker
-                    selected={form.class_date_option_3}
-                    onChange={(date) => updateField('class_date_option_3', date)}
+                    selected={form.choose_your_3rd_date_for_career_readiness}
+                    onChange={(date) => updateField('choose_your_3rd_date_for_career_readiness', date)}
                     dateFormat="MM-dd-yyyy"
                     filterDate={isAllowedThirdClassDate}
                     className="form-control"
@@ -388,7 +388,7 @@ function App() {
                     required
                   />
                 </label>
-              </div>
+              </>
             )}
           </>
         );
