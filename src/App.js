@@ -50,6 +50,7 @@ const genderOptions = ['Female', 'Male', 'Non-binary', 'Prefer not to say', 'Oth
 const ethnicityOptions = ['American Indian or Alaska Native', 'Asian', 'Black or African American', 'Hispanic or Latino', 'White', 'Two or more races', 'Prefer not to say'];
 const yesNo = ['Yes', 'No'];
 const noneOption = 'NONE OF THESE APPLY TO ME';
+const maxCareerReadinessDate = new Date(new Date().getFullYear(), 6, 2);
 
 function App() {
   const [step, setStep] = useState(1);
@@ -95,6 +96,12 @@ function App() {
     return day === 3 || day === 4;
   };
 
+  const isAllowedThirdClassDate = (date) => {
+    if (!isAllowedAdditionalClassDate(date)) return false;
+    if (!form.class_date_option_2) return true;
+    return date.getDay() !== form.class_date_option_2.getDay();
+  };
+
   const updateClassDate = (date) => {
     const needsExtraOptions = date && date.getDay() === 2;
     setForm((current) => ({
@@ -102,6 +109,17 @@ function App() {
       class_date: date,
       class_date_option_2: needsExtraOptions ? current.class_date_option_2 : null,
       class_date_option_3: needsExtraOptions ? current.class_date_option_3 : null,
+    }));
+  };
+
+  const updateSecondClassDate = (date) => {
+    setForm((current) => ({
+      ...current,
+      class_date_option_2: date,
+      class_date_option_3:
+        current.class_date_option_3 && date && current.class_date_option_3.getDay() === date.getDay()
+          ? null
+          : current.class_date_option_3,
     }));
   };
 
@@ -186,12 +204,12 @@ function App() {
     }
 
     if (!form.class_date) {
-      alert('Please choose a class date.');
+      alert('Please choose a workshop date.');
       return;
     }
 
     if (needsAdditionalClassDates() && (!form.class_date_option_2 || !form.class_date_option_3)) {
-      alert('Please choose both additional class date options.');
+      alert('Please choose both additional workshop date options.');
       return;
     }
 
@@ -214,7 +232,7 @@ function App() {
     if (!validateCurrentStep()) return;
 
     if (!form.class_date) {
-      alert('Please choose a class date.');
+      alert('Please choose a workshop date.');
       setStep(1);
       return;
     }
@@ -236,7 +254,7 @@ function App() {
       setIsSubmitted(true);
     } catch (error) {
       console.error('Submission failed:', error);
-      alert('The form submitted locally, but booking the class date failed. Please check the console.');
+      alert('The form submitted locally, but booking the workshop date failed. Please check the console.');
     } finally {
       setIsSubmitting(false);
     }
@@ -335,35 +353,38 @@ function App() {
                 className="form-control"
                 placeholderText="MM - DD - YYYY"
                 minDate={new Date()}
+                maxDate={maxCareerReadinessDate}
                 required
               />
-              <small>Choose Tuesday or Friday.</small>
+              <small>Tuesday workshops are from 5:00 pm - 6:00 pm cst and Friday workshops are from 2:00 pm - 5:00 pm cst. See below for more details.</small>
             </label>
             {showAdditionalClassDates && (
               <div className="two-column">
                 <label className="field">
-                  <span>Additional Class Date Option 1<sup>*</sup></span>
+                  <span>Additional Workshop Date Option 1<sup>*</sup></span>
                   <DatePicker
                     selected={form.class_date_option_2}
-                    onChange={(date) => updateField('class_date_option_2', date)}
+                    onChange={updateSecondClassDate}
                     dateFormat="MM-dd-yyyy"
                     filterDate={isAllowedAdditionalClassDate}
                     className="form-control"
                     placeholderText="MM - DD - YYYY"
                     minDate={new Date()}
+                    maxDate={maxCareerReadinessDate}
                     required
                   />
                 </label>
                 <label className="field">
-                  <span>Additional Class Date Option 2<sup>*</sup></span>
+                  <span>Additional Workshop Date Option 2<sup>*</sup></span>
                   <DatePicker
                     selected={form.class_date_option_3}
                     onChange={(date) => updateField('class_date_option_3', date)}
                     dateFormat="MM-dd-yyyy"
-                    filterDate={isAllowedAdditionalClassDate}
+                    filterDate={isAllowedThirdClassDate}
                     className="form-control"
                     placeholderText="MM - DD - YYYY"
                     minDate={new Date()}
+                    maxDate={maxCareerReadinessDate}
                     required
                   />
                 </label>
@@ -579,7 +600,7 @@ function App() {
       {isSubmitted ? (
         <section className="survey-card thank-you-card">
           <h1>Thank you for submitting</h1>
-          <p>We received your form and booked your selected class date.</p>
+          <p>We received your form and booked your selected workshop date.</p>
         </section>
       ) : (
       <form className="survey-card" onSubmit={handleSubmit}>
