@@ -87,11 +87,16 @@ function App() {
 
   const isAllowedDate = (date) => {
     const day = date.getDay();
-    return day >= 2 && day <= 5;
+    return day === 2 || day === 5;
+  };
+
+  const isAllowedAdditionalClassDate = (date) => {
+    const day = date.getDay();
+    return day === 3 || day === 4;
   };
 
   const updateClassDate = (date) => {
-    const needsExtraOptions = date && date.getDay() >= 2 && date.getDay() <= 4;
+    const needsExtraOptions = date && date.getDay() === 2;
     setForm((current) => ({
       ...current,
       class_date: date,
@@ -103,7 +108,47 @@ function App() {
   const needsAdditionalClassDates = () => {
     if (!form.class_date) return false;
     const day = form.class_date.getDay();
-    return day >= 2 && day <= 4;
+    return day === 2;
+  };
+
+  const requireCheckboxGroup = (name, message) => {
+    if (form[name].length > 0) return true;
+    alert(message);
+    return false;
+  };
+
+  const validateCurrentStep = () => {
+    if (step === 4) {
+      return (
+        requireCheckboxGroup(
+          'i_or_a_family_member_i_live_with_receive_the_following_type_of_public_assistancecheck_all_that_apply',
+          'Please choose at least one public assistance option.'
+        ) &&
+        requireCheckboxGroup(
+          'please_check_all_of_these_situations_that_apply_to_you',
+          'Please choose at least one situation option.'
+        )
+      );
+    }
+
+    if (step === 6 && form.are_you_involved_in_the_justice_system === 'Yes') {
+      return (
+        requireCheckboxGroup(
+          'what_is_your_status_in_the_justice_system_check_all_that_apply',
+          'Please choose at least one justice system status option.'
+        ) &&
+        requireCheckboxGroup(
+          'what_is_your_offense_status_check_all_that_apply',
+          'Please choose at least one offense status option.'
+        ) &&
+        requireCheckboxGroup(
+          'what_is_your_system_level_check_all_that_apply',
+          'Please choose at least one system level option.'
+        )
+      );
+    }
+
+    return true;
   };
 
   const syncStepOneToHubSpot = async () => {
@@ -133,6 +178,7 @@ function App() {
   const goNext = async (event) => {
     const formElement = event.currentTarget.form;
     if (!formElement.reportValidity()) return;
+    if (!validateCurrentStep()) return;
 
     if (step !== 1) {
       setStep((current) => Math.min(current + 1, TOTAL_STEPS));
@@ -164,6 +210,8 @@ function App() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (!validateCurrentStep()) return;
 
     if (!form.class_date) {
       alert('Please choose a class date.');
@@ -289,7 +337,7 @@ function App() {
                 minDate={new Date()}
                 required
               />
-              <small>Choose Tuesday, Wednesday, Thursday, or Friday.</small>
+              <small>Choose Tuesday or Friday.</small>
             </label>
             {showAdditionalClassDates && (
               <div className="two-column">
@@ -299,7 +347,7 @@ function App() {
                     selected={form.class_date_option_2}
                     onChange={(date) => updateField('class_date_option_2', date)}
                     dateFormat="MM-dd-yyyy"
-                    filterDate={isAllowedDate}
+                    filterDate={isAllowedAdditionalClassDate}
                     className="form-control"
                     placeholderText="MM - DD - YYYY"
                     minDate={new Date()}
@@ -312,7 +360,7 @@ function App() {
                     selected={form.class_date_option_3}
                     onChange={(date) => updateField('class_date_option_3', date)}
                     dateFormat="MM-dd-yyyy"
-                    filterDate={isAllowedDate}
+                    filterDate={isAllowedAdditionalClassDate}
                     className="form-control"
                     placeholderText="MM - DD - YYYY"
                     minDate={new Date()}
@@ -329,17 +377,17 @@ function App() {
             <h2 className="section-heading">Qualifying Information</h2>
             {renderSelect('are_you_under_18_years_old', 'Are you under 18 years old?', yesNo)}
             <label className="field">
-              <span>Street Address</span>
-              <input name="address" value={form.address} onChange={(e) => updateField('address', e.target.value)} />
+              <span>Street Address<sup>*</sup></span>
+              <input name="address" value={form.address} onChange={(e) => updateField('address', e.target.value)} required />
             </label>
             <div className="two-column">
               <label className="field">
-                <span>City</span>
-                <input name="city" value={form.city} onChange={(e) => updateField('city', e.target.value)} />
+                <span>City<sup>*</sup></span>
+                <input name="city" value={form.city} onChange={(e) => updateField('city', e.target.value)} required />
               </label>
               <label className="field">
-                <span>State</span>
-                <select value={form.fullname_state} onChange={(e) => updateField('fullname_state', e.target.value)}>
+                <span>State<sup>*</sup></span>
+                <select value={form.fullname_state} onChange={(e) => updateField('fullname_state', e.target.value)} required>
                   <option value=""></option>
                   {states.map((option) => (
                     <option key={option} value={option}>{option}</option>
@@ -348,7 +396,7 @@ function App() {
               </label>
             </div>
             <label className="field">
-              <span>Date of Birth</span>
+              <span>Date of Birth<sup>*</sup></span>
               <DatePicker
                 selected={form.date_of_birth}
                 onChange={(date) => updateField('date_of_birth', date)}
@@ -356,6 +404,7 @@ function App() {
                 className="form-control"
                 placeholderText="MM - DD - YYYY"
                 maxDate={new Date()}
+                required
               />
             </label>
             {renderSelect('what_gender_do_you_identify_as_', 'What gender do you identify as?', genderOptions)}
