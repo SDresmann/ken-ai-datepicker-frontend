@@ -6,17 +6,20 @@ import 'react-datepicker/dist/react-datepicker.css';
 import './App.css';
 
 const API_URL = 'https://ken-ai-datepicker-backend.onrender.com';
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
 
 const emptyForm = {
   first_name: '',
   last_name: '',
   email: '',
   phone: '+1 ',
+  marketing_message_consent: false,
   address: '',
   city: '',
   fullname_state: '',
   zip: '',
+  are_you_under_18_years_old: '',
+  date_of_birth: null,
   what_gender_do_you_identify_as_: '',
   what_is_your_racial_and_ethnic_identity_: '',
   class_date: null,
@@ -110,6 +113,7 @@ function App() {
       last_name: form.last_name,
       email: form.email,
       phone: form.phone,
+      marketing_message_consent: form.marketing_message_consent,
       address: form.address,
       city: form.city,
       fullname_state: form.fullname_state,
@@ -127,13 +131,13 @@ function App() {
   };
 
   const goNext = async (event) => {
+    const formElement = event.currentTarget.form;
+    if (!formElement.reportValidity()) return;
+
     if (step !== 1) {
       setStep((current) => Math.min(current + 1, TOTAL_STEPS));
       return;
     }
-
-    const formElement = event.currentTarget.form;
-    if (!formElement.reportValidity()) return;
 
     if (!form.class_date) {
       alert('Please choose a class date.');
@@ -176,6 +180,7 @@ function App() {
         class_date: date,
         class_date_option_2: form.class_date_option_2 ? moment(form.class_date_option_2).format('YYYY-MM-DD') : '',
         class_date_option_3: form.class_date_option_3 ? moment(form.class_date_option_3).format('YYYY-MM-DD') : '',
+        date_of_birth: form.date_of_birth ? moment(form.date_of_birth).format('YYYY-MM-DD') : '',
         date_signed: form.date_signed ? moment(form.date_signed).format('YYYY-MM-DD') : '',
       };
       const response = await axios.post(`${API_URL}/api/bookings`, payload);
@@ -228,6 +233,7 @@ function App() {
         const showAdditionalClassDates = needsAdditionalClassDates();
         return (
           <>
+            <h2 className="section-heading">Contact Details</h2>
             <div className="two-column">
               <label className="field">
                 <span>First Name<sup>*</sup></span>
@@ -244,36 +250,35 @@ function App() {
             </label>
             <label className="field">
               <span>Phone Number<sup>*</sup></span>
-              <input
-                name="phone"
-                type="tel"
-                value={form.phone}
-                onChange={(e) => updatePhoneNumber(e.target.value)}
-                pattern="\+1 \d{10}"
-                title="Enter a US phone number with +1 followed by 10 digits."
-                required
-              />
+              <div className="phone-input-row">
+                <span className="phone-country">🇺🇸</span>
+                <input
+                  name="phone"
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => updatePhoneNumber(e.target.value)}
+                  pattern="\+1 \d{10}"
+                  title="Enter a US phone number with +1 followed by 10 digits."
+                  required
+                />
+              </div>
               <small>US numbers only. Example: +1 5135551234</small>
             </label>
             <label className="field">
-              <span>Street Address<sup>*</sup></span>
-              <input name="address" value={form.address} onChange={(e) => updateField('address', e.target.value)} required />
+              <span>Postal Code<sup>*</sup></span>
+              <input name="zip" value={form.zip} onChange={(e) => updateField('zip', e.target.value)} required />
             </label>
-            <div className="three-column">
-              <label className="field">
-                <span>City<sup>*</sup></span>
-                <input name="city" value={form.city} onChange={(e) => updateField('city', e.target.value)} required />
-              </label>
-              {renderSelect('fullname_state', 'State', states)}
-              <label className="field">
-                <span>Postal Code<sup>*</sup></span>
-                <input name="zip" value={form.zip} onChange={(e) => updateField('zip', e.target.value)} required />
-              </label>
-            </div>
-            {renderSelect('what_gender_do_you_identify_as_', 'What gender do you identify as?', genderOptions)}
-            {renderSelect('what_is_your_racial_and_ethnic_identity_', 'What is your racial and ethnic identity?', ethnicityOptions)}
+            <label className="checkbox-row consent">
+              <input
+                type="checkbox"
+                checked={form.marketing_message_consent}
+                onChange={(e) => updateField('marketing_message_consent', e.target.checked)}
+                required
+              />
+              I agree to receive recurring automated marketing emails and text messages at the phone number provided. Consent is not a condition to purchase. Msg &amp; data rates may apply. Msg frequency varies. Reply HELP for help and STOP to cancel. View our Terms and Conditions and Privacy Policy.<sup>*</sup>
+            </label>
             <label className="field">
-              <span>Class Date<sup>*</sup></span>
+              <span>Which Career Readiness Date Are You Interested in Attending?<sup>*</sup></span>
               <DatePicker
                 selected={form.class_date}
                 onChange={updateClassDate}
@@ -319,6 +324,45 @@ function App() {
           </>
         );
       case 2:
+        return (
+          <>
+            <h2 className="section-heading">Qualifying Information</h2>
+            {renderSelect('are_you_under_18_years_old', 'Are you under 18 years old?', yesNo)}
+            <label className="field">
+              <span>Street Address</span>
+              <input name="address" value={form.address} onChange={(e) => updateField('address', e.target.value)} />
+            </label>
+            <div className="two-column">
+              <label className="field">
+                <span>City</span>
+                <input name="city" value={form.city} onChange={(e) => updateField('city', e.target.value)} />
+              </label>
+              <label className="field">
+                <span>State</span>
+                <select value={form.fullname_state} onChange={(e) => updateField('fullname_state', e.target.value)}>
+                  <option value=""></option>
+                  {states.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <label className="field">
+              <span>Date of Birth</span>
+              <DatePicker
+                selected={form.date_of_birth}
+                onChange={(date) => updateField('date_of_birth', date)}
+                dateFormat="MM-dd-yyyy"
+                className="form-control"
+                placeholderText="MM - DD - YYYY"
+                maxDate={new Date()}
+              />
+            </label>
+            {renderSelect('what_gender_do_you_identify_as_', 'What gender do you identify as?', genderOptions)}
+            {renderSelect('what_is_your_racial_and_ethnic_identity_', 'What is your racial and ethnic identity?', ethnicityOptions)}
+          </>
+        );
+      case 3:
         const isFinishingHighSchool = form.are_you_still_finishing_high_school === 'Yes';
         return (
           <>
@@ -359,7 +403,7 @@ function App() {
             ])}
           </>
         );
-      case 3:
+      case 4:
         return (
           <>
             <h2 className="section-heading">Assistance Received</h2>
@@ -380,7 +424,7 @@ function App() {
             ])}
           </>
         );
-      case 4:
+      case 5:
         const isParent = form.are_you_a_parent === 'Yes';
         return (
           <>
@@ -405,7 +449,7 @@ function App() {
             )}
           </>
         );
-      case 5:
+      case 6:
         const isJusticeInvolved = form.are_you_involved_in_the_justice_system === 'Yes';
         return (
           <>
@@ -436,7 +480,7 @@ function App() {
             )}
           </>
         );
-      case 6:
+      case 7:
         return (
           <>
             <h2 className="section-heading">Final Details</h2>

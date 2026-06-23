@@ -87,6 +87,27 @@ select,
   font-size: 16px;
 }
 
+.phone-input-row {
+  display: flex;
+}
+
+.phone-country {
+  display: inline-flex;
+  width: 56px;
+  height: 41px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #9aa4af;
+  border-right: 0;
+  border-radius: 2px 0 0 2px;
+  background: #f8fafc;
+  font-size: 18px;
+}
+
+.phone-input-row input {
+  border-radius: 0 2px 2px 0;
+}
+
 select {
   cursor: pointer;
 }
