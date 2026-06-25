@@ -520,7 +520,6 @@ function App() {
                     maxDate={maxSecondWorkshopDate}
                     required
                   />
-                  <small>Wednesday only, through July 1.</small>
                 </label>
                 <label className="field">
                   <span>Choose the 3rd Date for your Career Readiness Workshop:<sup>*</sup></span>
@@ -535,7 +534,6 @@ function App() {
                     maxDate={maxThirdWorkshopDate}
                     required
                   />
-                  <small>Thursday only, through July 2.</small>
                 </label>
               </>
             )}
