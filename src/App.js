@@ -22,7 +22,7 @@ const emptyForm = {
   date_of_birth: null,
   what_gender_do_you_identify_as_: '',
   what_is_your_racial_and_ethnic_identity_: '',
-  class_date: null,
+  which_career_readiness_date_are_you_interested_in_attending_work: null,
   choose_the_2nd_date_for_your_career_readiness_class_work: null,
   choose_the_3rd_date_for_your_career_readiness_class_work: null,
   are_you_still_finishing_high_school: '',
@@ -50,7 +50,26 @@ const genderOptions = ['Female', 'Male', 'Non-binary', 'Prefer not to say', 'Oth
 const ethnicityOptions = ['American Indian or Alaska Native', 'Asian', 'Black or African American', 'Hispanic or Latino', 'White', 'Two or more races', 'Prefer not to say'];
 const yesNo = ['Yes', 'No'];
 const noneOption = 'NONE OF THESE APPLY TO ME';
-const maxCareerReadinessDate = new Date(new Date().getFullYear(), 6, 2);
+const workshopYear = new Date().getFullYear();
+const maxFirstWorkshopDate = new Date(workshopYear, 6, 2);
+const maxSecondWorkshopDate = new Date(workshopYear, 6, 1);
+const maxThirdWorkshopDate = new Date(workshopYear, 6, 2);
+
+function startOfDay(date) {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
+
+function addDays(date, days) {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
+
+function isSameDay(a, b) {
+  return startOfDay(a).getTime() === startOfDay(b).getTime();
+}
 
 function formatHubSpotError(error) {
   const data = error?.response?.data || {};
@@ -65,6 +84,60 @@ function formatHubSpotError(error) {
     data.attemptedPayload ? `Payload sent: ${JSON.stringify(data.attemptedPayload)}` : null,
     data.skippedProperties?.length ? `Skipped properties: ${data.skippedProperties.join(', ')}` : null,
   ].filter(Boolean).join('\n\n');
+}
+
+function buildFormPayload(formData, { formStatus } = {}) {
+  const workshopDate = formData.which_career_readiness_date_are_you_interested_in_attending_work;
+  const date = workshopDate && moment(workshopDate).isValid()
+    ? moment(workshopDate).format('YYYY-MM-DD')
+    : '';
+
+  return {
+    first_name: formData.first_name,
+    last_name: formData.last_name,
+    email: formData.email,
+    phone: formData.phone,
+    marketing_message_consent: formData.marketing_message_consent,
+    address: formData.address,
+    city: formData.city,
+    fullname_state: formData.fullname_state,
+    zip: formData.zip,
+    are_you_under_18_years_old: formData.are_you_under_18_years_old,
+    date_of_birth: formData.date_of_birth ? moment(formData.date_of_birth).format('YYYY-MM-DD') : '',
+    what_gender_do_you_identify_as_: formData.what_gender_do_you_identify_as_,
+    what_is_your_racial_and_ethnic_identity_: formData.what_is_your_racial_and_ethnic_identity_,
+    which_career_readiness_date_are_you_interested_in_attending_work: date,
+    class_date: date,
+    choose_the_2nd_date_for_your_career_readiness_class_work: formData.choose_the_2nd_date_for_your_career_readiness_class_work
+      ? moment(formData.choose_the_2nd_date_for_your_career_readiness_class_work).format('YYYY-MM-DD')
+      : '',
+    choose_the_3rd_date_for_your_career_readiness_class_work: formData.choose_the_3rd_date_for_your_career_readiness_class_work
+      ? moment(formData.choose_the_3rd_date_for_your_career_readiness_class_work).format('YYYY-MM-DD')
+      : '',
+    are_you_still_finishing_high_school: formData.are_you_still_finishing_high_school,
+    whats_the_full_name_of_your_school: formData.whats_the_full_name_of_your_school,
+    what_grade_are_you_currently_in: formData.what_grade_are_you_currently_in,
+    highest_level_of_education_: formData.highest_level_of_education_,
+    i_or_a_family_member_i_live_with_receive_the_following_type_of_public_assistancecheck_all_that_apply:
+      formData.i_or_a_family_member_i_live_with_receive_the_following_type_of_public_assistancecheck_all_that_apply,
+    please_check_all_of_these_situations_that_apply_to_you: formData.please_check_all_of_these_situations_that_apply_to_you,
+    are_you_a_parent: formData.are_you_a_parent,
+    how_many_children_do_you_have: formData.how_many_children_do_you_have,
+    are_you_a_single_parent: formData.are_you_a_single_parent,
+    are_you_involved_in_the_justice_system: formData.are_you_involved_in_the_justice_system,
+    what_is_your_status_in_the_justice_system_check_all_that_apply: formData.what_is_your_status_in_the_justice_system_check_all_that_apply,
+    what_is_your_offense_status_check_all_that_apply: formData.what_is_your_offense_status_check_all_that_apply,
+    what_is_your_system_level_check_all_that_apply: formData.what_is_your_system_level_check_all_that_apply,
+    do_you_grant_permission_for_your_data_as_it_relates_to_this_program_to_be_collected_and_tracked:
+      formData.do_you_grant_permission_for_your_data_as_it_relates_to_this_program_to_be_collected_and_tracked,
+    i_consent_to_the_irrevocable_right_to_use_my_name__or_a_fictional_name___statement_s__story__photog:
+      formData.i_consent_to_the_irrevocable_right_to_use_my_name__or_a_fictional_name___statement_s__story__photog,
+    digital_signature: formData.digital_signature,
+    date_signed: formData.date_signed ? moment(formData.date_signed).format('YYYY-MM-DD') : '',
+    whats_your_employment_status_pick_only_1: formData.whats_your_employment_status_pick_only_1,
+    career_readiness_form_status: formStatus || '',
+    date,
+  };
 }
 
 function App() {
@@ -102,29 +175,84 @@ function App() {
     });
   };
 
-  const isAllowedDate = (date) => {
-    const day = date.getDay();
-    return day === 2 || day === 5;
+  const getSelectedTuesday = () => {
+    const primary = form.which_career_readiness_date_are_you_interested_in_attending_work;
+    if (!primary || primary.getDay() !== 2) return null;
+    return startOfDay(primary);
   };
 
-  const isAllowedAdditionalClassDate = (date) => {
+  const isWorkshopWeekBookable = (tuesday = getSelectedTuesday()) => {
+    if (!tuesday) return true;
+    return startOfDay(new Date()) <= tuesday;
+  };
+
+  const isAllowedDate = (date) => {
     const day = date.getDay();
-    return day === 3 || day === 4;
+    if (day === 5) return true;
+    if (day !== 2) return false;
+
+    const tuesday = startOfDay(date);
+    const wednesday = addDays(tuesday, 1);
+    const thursday = addDays(tuesday, 2);
+    return (
+      startOfDay(wednesday) <= startOfDay(maxSecondWorkshopDate) &&
+      startOfDay(thursday) <= startOfDay(maxThirdWorkshopDate)
+    );
+  };
+
+  const isAllowedSecondClassDate = (date) => {
+    if (date.getDay() !== 3) return false;
+    if (startOfDay(date) > startOfDay(maxSecondWorkshopDate)) return false;
+    if (startOfDay(date) < startOfDay(new Date())) return false;
+
+    const tuesday = getSelectedTuesday();
+    if (!tuesday) return false;
+    if (!isWorkshopWeekBookable(tuesday)) return false;
+
+    return isSameDay(date, addDays(tuesday, 1));
   };
 
   const isAllowedThirdClassDate = (date) => {
-    if (!isAllowedAdditionalClassDate(date)) return false;
-    if (!form.choose_the_2nd_date_for_your_career_readiness_class_work) return true;
-    return date.getDay() !== form.choose_the_2nd_date_for_your_career_readiness_class_work.getDay();
+    if (date.getDay() !== 4) return false;
+    if (startOfDay(date) > startOfDay(maxThirdWorkshopDate)) return false;
+    if (startOfDay(date) < startOfDay(new Date())) return false;
+
+    const tuesday = getSelectedTuesday();
+    if (!tuesday) return false;
+    if (!isWorkshopWeekBookable(tuesday)) return false;
+
+    return isSameDay(date, addDays(tuesday, 2));
   };
 
   const updateClassDate = (date) => {
     const needsExtraOptions = date && date.getDay() === 2;
+    let second = null;
+    let third = null;
+
+    if (needsExtraOptions) {
+      const tuesday = startOfDay(date);
+      const wednesday = addDays(tuesday, 1);
+      const thursday = addDays(tuesday, 2);
+
+      if (
+        isWorkshopWeekBookable(tuesday) &&
+        startOfDay(wednesday) <= startOfDay(maxSecondWorkshopDate)
+      ) {
+        second = wednesday;
+      }
+      if (
+        isWorkshopWeekBookable(tuesday) &&
+        startOfDay(thursday) <= startOfDay(maxThirdWorkshopDate)
+      ) {
+        third = thursday;
+      }
+    }
+
     setForm((current) => ({
       ...current,
-      class_date: date,
-      choose_the_2nd_date_for_your_career_readiness_class_work: needsExtraOptions ? current.choose_the_2nd_date_for_your_career_readiness_class_work : null,
-      choose_the_3rd_date_for_your_career_readiness_class_work: needsExtraOptions ? current.choose_the_3rd_date_for_your_career_readiness_class_work : null,
+      which_career_readiness_date_are_you_interested_in_attending_work: date,
+      choose_the_2nd_date_for_your_career_readiness_class_work: needsExtraOptions ? second : null,
+      choose_the_3rd_date_for_your_career_readiness_class_work: needsExtraOptions ? third : null,
     }));
   };
 
@@ -132,16 +260,12 @@ function App() {
     setForm((current) => ({
       ...current,
       choose_the_2nd_date_for_your_career_readiness_class_work: date,
-      choose_the_3rd_date_for_your_career_readiness_class_work:
-        current.choose_the_3rd_date_for_your_career_readiness_class_work && date && current.choose_the_3rd_date_for_your_career_readiness_class_work.getDay() === date.getDay()
-          ? null
-          : current.choose_the_3rd_date_for_your_career_readiness_class_work,
     }));
   };
 
   const needsAdditionalClassDates = () => {
-    if (!form.class_date) return false;
-    const day = form.class_date.getDay();
+    if (!form.which_career_readiness_date_are_you_interested_in_attending_work) return false;
+    const day = form.which_career_readiness_date_are_you_interested_in_attending_work.getDay();
     return day === 2;
   };
 
@@ -185,28 +309,16 @@ function App() {
     return true;
   };
 
-  const syncStepOneToHubSpot = async () => {
-    const date = moment(form.class_date).format('YYYY-MM-DD');
-    const payload = {
-      first_name: form.first_name,
-      last_name: form.last_name,
-      email: form.email,
-      phone: form.phone,
-      marketing_message_consent: form.marketing_message_consent,
-      address: form.address,
-      city: form.city,
-      fullname_state: form.fullname_state,
-      zip: form.zip,
-      what_gender_do_you_identify_as_: form.what_gender_do_you_identify_as_,
-      what_is_your_racial_and_ethnic_identity_: form.what_is_your_racial_and_ethnic_identity_,
-      class_date: date,
-      choose_the_2nd_date_for_your_career_readiness_class_work: form.choose_the_2nd_date_for_your_career_readiness_class_work ? moment(form.choose_the_2nd_date_for_your_career_readiness_class_work).format('YYYY-MM-DD') : '',
-      choose_the_3rd_date_for_your_career_readiness_class_work: form.choose_the_3rd_date_for_your_career_readiness_class_work ? moment(form.choose_the_3rd_date_for_your_career_readiness_class_work).format('YYYY-MM-DD') : '',
-    };
+  const syncToHubSpot = async () => {
+    const payload = buildFormPayload(form, { formStatus: 'Partial' });
 
-    console.log('HubSpot page one payload:', payload);
+    if (!payload.email || !payload.which_career_readiness_date_are_you_interested_in_attending_work) {
+      throw new Error('Email and workshop date are required before syncing to HubSpot.');
+    }
+
+    console.log('HubSpot sync payload:', payload);
     const response = await axios.post(`${API_URL}/api/bookings/hubspot-step-one`, payload);
-    console.log('HubSpot page one saved:', response.data);
+    console.log('HubSpot sync saved:', response.data);
     if (response.data.skippedProperties?.length) {
       console.warn('HubSpot skipped custom properties:', response.data.skippedProperties);
     }
@@ -218,25 +330,38 @@ function App() {
     if (!formElement.reportValidity()) return;
     if (!validateCurrentStep()) return;
 
-    if (step !== 1) {
-      setStep((current) => Math.min(current + 1, TOTAL_STEPS));
-      return;
-    }
+    if (step === 1) {
+      if (!form.which_career_readiness_date_are_you_interested_in_attending_work) {
+        alert('Please choose a workshop date.');
+        return;
+      }
 
-    if (!form.class_date) {
-      alert('Please choose a workshop date.');
-      return;
-    }
+      if (!moment(form.which_career_readiness_date_are_you_interested_in_attending_work).isValid()) {
+        alert('Please choose a valid workshop date (Tuesday or Friday).');
+        return;
+      }
 
-    if (needsAdditionalClassDates() && (!form.choose_the_2nd_date_for_your_career_readiness_class_work || !form.choose_the_3rd_date_for_your_career_readiness_class_work)) {
-      alert('Please choose both additional workshop date options.');
-      return;
+      if (!isAllowedDate(form.which_career_readiness_date_are_you_interested_in_attending_work)) {
+        alert('The first workshop date must be a Tuesday or Friday.');
+        return;
+      }
+
+      if (needsAdditionalClassDates()) {
+        if (!isWorkshopWeekBookable()) {
+          alert('This Tuesday workshop week is no longer available. Please choose a different Tuesday date.');
+          return;
+        }
+        if (!form.choose_the_2nd_date_for_your_career_readiness_class_work || !form.choose_the_3rd_date_for_your_career_readiness_class_work) {
+          alert('Please choose both additional workshop date options.');
+          return;
+        }
+      }
     }
 
     try {
       setIsSavingStepOne(true);
       setHubspotError('');
-      await syncStepOneToHubSpot();
+      await syncToHubSpot();
       setStep((current) => Math.min(current + 1, TOTAL_STEPS));
     } catch (error) {
       const formatted = formatHubSpotError(error);
@@ -245,8 +370,8 @@ function App() {
       console.error('Response:', error.response?.data);
       console.error('Formatted:', formatted);
       console.groupEnd();
-      setHubspotError(formatted || 'We could not add this first page to HubSpot. Please check the console and try again.');
-      alert(formatted || 'We could not add this first page to HubSpot. Please check the console and try again.');
+      setHubspotError(formatted || 'We could not save your progress to HubSpot. Please check the console and try again.');
+      alert(formatted || 'We could not save your progress to HubSpot. Please check the console and try again.');
     } finally {
       setIsSavingStepOne(false);
     }
@@ -258,7 +383,7 @@ function App() {
 
     if (!validateCurrentStep()) return;
 
-    if (!form.class_date) {
+    if (!form.which_career_readiness_date_are_you_interested_in_attending_work) {
       alert('Please choose a workshop date.');
       setStep(1);
       return;
@@ -266,22 +391,17 @@ function App() {
 
     try {
       setIsSubmitting(true);
-      const date = moment(form.class_date).format('YYYY-MM-DD');
-      const payload = {
-        ...form,
-        date,
-        class_date: date,
-        choose_the_2nd_date_for_your_career_readiness_class_work: form.choose_the_2nd_date_for_your_career_readiness_class_work ? moment(form.choose_the_2nd_date_for_your_career_readiness_class_work).format('YYYY-MM-DD') : '',
-        choose_the_3rd_date_for_your_career_readiness_class_work: form.choose_the_3rd_date_for_your_career_readiness_class_work ? moment(form.choose_the_3rd_date_for_your_career_readiness_class_work).format('YYYY-MM-DD') : '',
-        date_of_birth: form.date_of_birth ? moment(form.date_of_birth).format('YYYY-MM-DD') : '',
-        date_signed: form.date_signed ? moment(form.date_signed).format('YYYY-MM-DD') : '',
-      };
+      const payload = buildFormPayload(form, { formStatus: 'Complete' });
       const response = await axios.post(`${API_URL}/api/bookings`, payload);
       console.log('Booked:', response.data, form);
+      if (response.data.hubspotError) {
+        alert(`Your workshop was booked, but some HubSpot fields may not have saved: ${response.data.hubspotError}`);
+      }
       setIsSubmitted(true);
     } catch (error) {
       console.error('Submission failed:', error);
-      alert('The form submitted locally, but booking the workshop date failed. Please check the console.');
+      const detail = error.response?.data?.detail || error.response?.data?.message;
+      alert(detail || 'The form submitted locally, but booking the workshop date failed. Please check the console.');
     } finally {
       setIsSubmitting(false);
     }
@@ -373,14 +493,14 @@ function App() {
             <label className="field">
               <span>Which Career Readiness Date Are You Interested in Attending?<sup>*</sup></span>
               <DatePicker
-                selected={form.class_date}
+                selected={form.which_career_readiness_date_are_you_interested_in_attending_work}
                 onChange={updateClassDate}
                 dateFormat="MM-dd-yyyy"
                 filterDate={isAllowedDate}
                 className="form-control"
                 placeholderText="MM - DD - YYYY"
                 minDate={new Date()}
-                maxDate={maxCareerReadinessDate}
+                maxDate={maxFirstWorkshopDate}
                 required
               />
               <small>Tuesday workshops are from 5:00 pm - 6:00 pm cst and Friday workshops are from 2:00 pm - 5:00 pm cst. See below for more details.</small>
@@ -393,13 +513,14 @@ function App() {
                     selected={form.choose_the_2nd_date_for_your_career_readiness_class_work}
                     onChange={updateSecondClassDate}
                     dateFormat="MM-dd-yyyy"
-                    filterDate={isAllowedAdditionalClassDate}
+                    filterDate={isAllowedSecondClassDate}
                     className="form-control"
                     placeholderText="MM - DD - YYYY"
                     minDate={new Date()}
-                    maxDate={maxCareerReadinessDate}
+                    maxDate={maxSecondWorkshopDate}
                     required
                   />
+                  <small>Wednesday only, through July 1.</small>
                 </label>
                 <label className="field">
                   <span>Choose the 3rd Date for your Career Readiness Workshop:<sup>*</sup></span>
@@ -411,9 +532,10 @@ function App() {
                     className="form-control"
                     placeholderText="MM - DD - YYYY"
                     minDate={new Date()}
-                    maxDate={maxCareerReadinessDate}
+                    maxDate={maxThirdWorkshopDate}
                     required
                   />
+                  <small>Thursday only, through July 2.</small>
                 </label>
               </>
             )}
