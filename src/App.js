@@ -65,16 +65,16 @@ function addDays(date, days) {
   return copy;
 }
 
-function isSameDay(a, b) {
-  return startOfDay(a).getTime() === startOfDay(b).getTime();
+function getEarliestBookableDate() {
+  return addDays(startOfDay(new Date()), 2);
 }
 
-function isPastDate(date) {
-  return startOfDay(date) < startOfDay(new Date());
+function isBeforeEarliestBookableDate(date) {
+  return startOfDay(date) < getEarliestBookableDate();
 }
 
 function getPastWorkshopDayClassName(date) {
-  return isPastDate(date) ? 'workshop-day--past' : '';
+  return isBeforeEarliestBookableDate(date) ? 'workshop-day--past' : '';
 }
 
 function formatHubSpotError(error) {
@@ -187,80 +187,42 @@ function App() {
     return startOfDay(primary);
   };
 
-  const isWorkshopWeekBookable = (tuesday = getSelectedTuesday()) => {
-    if (!tuesday) return true;
-    return startOfDay(new Date()) <= tuesday;
-  };
-
   const isAllowedDate = (date) => {
-    if (isPastDate(date)) return false;
+    if (isBeforeEarliestBookableDate(date)) return false;
+    if (startOfDay(date) > startOfDay(maxWorkshopDate)) return false;
 
     const day = date.getDay();
-    if (day === 5) return true;
-    if (day !== 2) return false;
-
-    const tuesday = startOfDay(date);
-    const wednesday = addDays(tuesday, 1);
-    const thursday = addDays(tuesday, 2);
-    return (
-      startOfDay(wednesday) <= startOfDay(maxWorkshopDate) &&
-      startOfDay(thursday) <= startOfDay(maxWorkshopDate)
-    );
+    return day === 2 || day === 5;
   };
 
   const isAllowedSecondClassDate = (date) => {
     if (date.getDay() !== 3) return false;
+    if (isBeforeEarliestBookableDate(date)) return false;
     if (startOfDay(date) > startOfDay(maxWorkshopDate)) return false;
-    if (startOfDay(date) < startOfDay(new Date())) return false;
 
     const tuesday = getSelectedTuesday();
     if (!tuesday) return false;
-    if (!isWorkshopWeekBookable(tuesday)) return false;
 
-    return isSameDay(date, addDays(tuesday, 1));
+    return startOfDay(date) > tuesday;
   };
 
   const isAllowedThirdClassDate = (date) => {
     if (date.getDay() !== 4) return false;
+    if (isBeforeEarliestBookableDate(date)) return false;
     if (startOfDay(date) > startOfDay(maxWorkshopDate)) return false;
-    if (startOfDay(date) < startOfDay(new Date())) return false;
 
     const tuesday = getSelectedTuesday();
     if (!tuesday) return false;
-    if (!isWorkshopWeekBookable(tuesday)) return false;
 
-    return isSameDay(date, addDays(tuesday, 2));
+    return startOfDay(date) > tuesday;
   };
 
   const updateClassDate = (date) => {
-    const needsExtraOptions = date && date.getDay() === 2;
-    let second = null;
-    let third = null;
-
-    if (needsExtraOptions) {
-      const tuesday = startOfDay(date);
-      const wednesday = addDays(tuesday, 1);
-      const thursday = addDays(tuesday, 2);
-
-      if (
-        isWorkshopWeekBookable(tuesday) &&
-        startOfDay(wednesday) <= startOfDay(maxWorkshopDate)
-      ) {
-        second = wednesday;
-      }
-      if (
-        isWorkshopWeekBookable(tuesday) &&
-        startOfDay(thursday) <= startOfDay(maxWorkshopDate)
-      ) {
-        third = thursday;
-      }
-    }
-
     setForm((current) => ({
       ...current,
       which_career_readiness_date_are_you_interested_in_attending_work: date,
-      choose_the_2nd_date_for_your_career_readiness_class_work: needsExtraOptions ? second : null,
-      choose_the_3rd_date_for_your_career_readiness_class_work: needsExtraOptions ? third : null,
+      choose_the_2nd_date_for_your_career_readiness_class_work: null,
+      choose_the_3rd_date_for_your_career_readiness_class_work: null,
     }));
   };
 
@@ -355,12 +317,22 @@ function App() {
       }
 
       if (needsAdditionalClassDates()) {
-        if (!isWorkshopWeekBookable()) {
-          alert('This Tuesday workshop week is no longer available. Please choose a different Tuesday date.');
-          return;
-        }
         if (!form.choose_the_2nd_date_for_your_career_readiness_class_work || !form.choose_the_3rd_date_for_your_career_readiness_class_work) {
           alert('Please choose both additional workshop date options.');
+          return;
+        }
+
+        const tuesday = getSelectedTuesday();
+        const secondDate = startOfDay(form.choose_the_2nd_date_for_your_career_readiness_class_work);
+        const thirdDate = startOfDay(form.choose_the_3rd_date_for_your_career_readiness_class_work);
+
+        if (secondDate <= tuesday) {
+          alert('The 2nd workshop date must be a Wednesday after your Tuesday date.');
+          return;
+        }
+
+        if (thirdDate <= tuesday) {
+          alert('The 3rd workshop date must be a Thursday after your Tuesday date.');
           return;
         }
       }
@@ -508,7 +480,7 @@ function App() {
                 dayClassName={getPastWorkshopDayClassName}
                 className="form-control"
                 placeholderText="MM - DD - YYYY"
-                minDate={new Date()}
+                minDate={getEarliestBookableDate()}
                 maxDate={maxWorkshopDate}
                 required
               />
@@ -526,7 +498,7 @@ function App() {
                     dayClassName={getPastWorkshopDayClassName}
                     className="form-control"
                     placeholderText="MM - DD - YYYY"
-                    minDate={new Date()}
+                    minDate={getEarliestBookableDate()}
                     maxDate={maxWorkshopDate}
                     required
                   />
@@ -541,7 +513,7 @@ function App() {
                     dayClassName={getPastWorkshopDayClassName}
                     className="form-control"
                     placeholderText="MM - DD - YYYY"
-                    minDate={new Date()}
+                    minDate={getEarliestBookableDate()}
                     maxDate={maxWorkshopDate}
                     required
                   />
