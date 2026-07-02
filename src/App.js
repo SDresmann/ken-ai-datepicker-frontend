@@ -42,7 +42,7 @@ const emptyForm = {
   i_consent_to_the_irrevocable_right_to_use_my_name__or_a_fictional_name___statement_s__story__photog: false,
   digital_signature: '',
   date_signed: null,
-  whats_your_employment_status_pick_only_1: '',
+  are_you_unemployed: '',
 };
 
 const states = ['OH', 'KY', 'IN', 'MI', 'PA', 'Other'];
@@ -51,9 +51,7 @@ const ethnicityOptions = ['American Indian or Alaska Native', 'Asian', 'Black or
 const yesNo = ['Yes', 'No'];
 const noneOption = 'NONE OF THESE APPLY TO ME';
 const workshopYear = new Date().getFullYear();
-const maxFirstWorkshopDate = new Date(workshopYear, 6, 2);
-const maxSecondWorkshopDate = new Date(workshopYear, 6, 1);
-const maxThirdWorkshopDate = new Date(workshopYear, 6, 2);
+const maxWorkshopDate = new Date(workshopYear, 6, 31);
 
 function startOfDay(date) {
   const copy = new Date(date);
@@ -69,6 +67,14 @@ function addDays(date, days) {
 
 function isSameDay(a, b) {
   return startOfDay(a).getTime() === startOfDay(b).getTime();
+}
+
+function isPastDate(date) {
+  return startOfDay(date) < startOfDay(new Date());
+}
+
+function getPastWorkshopDayClassName(date) {
+  return isPastDate(date) ? 'workshop-day--past' : '';
 }
 
 function formatHubSpotError(error) {
@@ -187,6 +193,8 @@ function App() {
   };
 
   const isAllowedDate = (date) => {
+    if (isPastDate(date)) return false;
+
     const day = date.getDay();
     if (day === 5) return true;
     if (day !== 2) return false;
@@ -195,14 +203,14 @@ function App() {
     const wednesday = addDays(tuesday, 1);
     const thursday = addDays(tuesday, 2);
     return (
-      startOfDay(wednesday) <= startOfDay(maxSecondWorkshopDate) &&
-      startOfDay(thursday) <= startOfDay(maxThirdWorkshopDate)
+      startOfDay(wednesday) <= startOfDay(maxWorkshopDate) &&
+      startOfDay(thursday) <= startOfDay(maxWorkshopDate)
     );
   };
 
   const isAllowedSecondClassDate = (date) => {
     if (date.getDay() !== 3) return false;
-    if (startOfDay(date) > startOfDay(maxSecondWorkshopDate)) return false;
+    if (startOfDay(date) > startOfDay(maxWorkshopDate)) return false;
     if (startOfDay(date) < startOfDay(new Date())) return false;
 
     const tuesday = getSelectedTuesday();
@@ -214,7 +222,7 @@ function App() {
 
   const isAllowedThirdClassDate = (date) => {
     if (date.getDay() !== 4) return false;
-    if (startOfDay(date) > startOfDay(maxThirdWorkshopDate)) return false;
+    if (startOfDay(date) > startOfDay(maxWorkshopDate)) return false;
     if (startOfDay(date) < startOfDay(new Date())) return false;
 
     const tuesday = getSelectedTuesday();
@@ -236,13 +244,13 @@ function App() {
 
       if (
         isWorkshopWeekBookable(tuesday) &&
-        startOfDay(wednesday) <= startOfDay(maxSecondWorkshopDate)
+        startOfDay(wednesday) <= startOfDay(maxWorkshopDate)
       ) {
         second = wednesday;
       }
       if (
         isWorkshopWeekBookable(tuesday) &&
-        startOfDay(thursday) <= startOfDay(maxThirdWorkshopDate)
+        startOfDay(thursday) <= startOfDay(maxWorkshopDate)
       ) {
         third = thursday;
       }
@@ -497,10 +505,11 @@ function App() {
                 onChange={updateClassDate}
                 dateFormat="MM-dd-yyyy"
                 filterDate={isAllowedDate}
+                dayClassName={getPastWorkshopDayClassName}
                 className="form-control"
                 placeholderText="MM - DD - YYYY"
                 minDate={new Date()}
-                maxDate={maxFirstWorkshopDate}
+                maxDate={maxWorkshopDate}
                 required
               />
               <small>Tuesday workshops are from 5:00 pm - 6:00 pm cst and Friday workshops are from 2:00 pm - 5:00 pm cst. See below for more details.</small>
@@ -514,10 +523,11 @@ function App() {
                     onChange={updateSecondClassDate}
                     dateFormat="MM-dd-yyyy"
                     filterDate={isAllowedSecondClassDate}
+                    dayClassName={getPastWorkshopDayClassName}
                     className="form-control"
                     placeholderText="MM - DD - YYYY"
                     minDate={new Date()}
-                    maxDate={maxSecondWorkshopDate}
+                    maxDate={maxWorkshopDate}
                     required
                   />
                 </label>
@@ -528,10 +538,11 @@ function App() {
                     onChange={(date) => updateField('choose_the_3rd_date_for_your_career_readiness_class_work', date)}
                     dateFormat="MM-dd-yyyy"
                     filterDate={isAllowedThirdClassDate}
+                    dayClassName={getPastWorkshopDayClassName}
                     className="form-control"
                     placeholderText="MM - DD - YYYY"
                     minDate={new Date()}
-                    maxDate={maxThirdWorkshopDate}
+                    maxDate={maxWorkshopDate}
                     required
                   />
                 </label>

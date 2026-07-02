@@ -132,6 +132,18 @@ select {
   width: 100%;
 }
 
+.react-datepicker__day.workshop-day--past,
+.react-datepicker__day--disabled.workshop-day--past {
+  color: #9aa0a6;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+.react-datepicker__day.workshop-day--past:hover,
+.react-datepicker__day--disabled.workshop-day--past:hover {
+  background: transparent;
+}
+
 .two-column,
 .three-column {
   display: grid;
