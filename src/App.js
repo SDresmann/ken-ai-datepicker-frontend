@@ -383,6 +383,9 @@ function App() {
       if (response.data.hubspotError) {
         alert(`Your workshop was booked, but some HubSpot fields may not have saved: ${response.data.hubspotError}`);
       }
+      if (response.data.signupEmailError) {
+        alert(`Your workshop was booked, but staff notification emails may not have sent: ${response.data.signupEmailError}`);
+      }
       setIsSubmitted(true);
     } catch (error) {
       console.error('Submission failed:', error);
