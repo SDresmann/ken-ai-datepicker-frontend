@@ -5,7 +5,10 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import './App.css';
 
-const API_URL = 'https://ken-ai-datepicker-backend.onrender.com';
+const API_URL = process.env.REACT_APP_API_URL ||
+  (process.env.NODE_ENV === 'development'
+    ? 'http://localhost:5000'
+    : 'https://ken-ai-datepicker-backend.onrender.com');
 const TOTAL_STEPS = 7;
 
 const emptyForm = {
@@ -383,9 +386,6 @@ function App() {
       if (response.data.hubspotError) {
         alert(`Your workshop was booked, but some HubSpot fields may not have saved: ${response.data.hubspotError}`);
       }
-      if (response.data.signupEmailError) {
-        alert(`Your workshop was booked, but staff notification emails may not have sent: ${response.data.signupEmailError}`);
-      }
       setIsSubmitted(true);
     } catch (error) {
       console.error('Submission failed:', error);
@@ -607,7 +607,7 @@ function App() {
               'Vocational Training',
               'Some college - no degree',
               'Associate Degree',
-              'Bachelor Degree',
+              "Bachelor's Degree",
               "Master's degree",
             ])}
           </>
@@ -616,7 +616,7 @@ function App() {
         return (
           <>
             <h2 className="section-heading">Assistance Received</h2>
-            {renderCheckboxGroup('i_or_a_family_member_i_live_with_receive_the_following_type_of_public_assistancecheck_all_that_apply', 'I or a family member I live with receive the following type of Public Assistance - Check all that apply', [
+            {renderCheckboxGroup('i_or_a_family_member_i_live_with_receive_the_following_type_of_public_assistancecheck_all_that_apply', 'I or a family member I live with receive the following type of Public Assistance (check all that apply)', [
               'SNAP/Food Stamps',
               'SSI (Supplemental Security Income)',
               'TANF (Temporary Assistance for Needy Families)',
