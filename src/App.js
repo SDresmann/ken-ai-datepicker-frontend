@@ -55,6 +55,7 @@ const yesNo = ['Yes', 'No'];
 const noneOption = 'NONE OF THESE APPLY TO ME';
 const workshopYear = new Date().getFullYear();
 const maxWorkshopDate = new Date(workshopYear, 6, 31);
+const DATE_PICKER_POPPER_PLACEMENT = 'top-start';
 
 function startOfDay(date) {
   const copy = new Date(date);
@@ -485,6 +486,7 @@ function App() {
                 selected={form.which_career_readiness_date_are_you_interested_in_attending_work}
                 onChange={updateClassDate}
                 dateFormat="MM-dd-yyyy"
+                popperPlacement={DATE_PICKER_POPPER_PLACEMENT}
                 filterDate={isAllowedDate}
                 dayClassName={getPastWorkshopDayClassName}
                 className="form-control"
@@ -503,6 +505,7 @@ function App() {
                     selected={form.choose_the_2nd_date_for_your_career_readiness_class_work}
                     onChange={updateSecondClassDate}
                     dateFormat="MM-dd-yyyy"
+                popperPlacement={DATE_PICKER_POPPER_PLACEMENT}
                     filterDate={isAllowedSecondClassDate}
                     dayClassName={getPastWorkshopDayClassName}
                     className="form-control"
@@ -518,6 +521,7 @@ function App() {
                     selected={form.choose_the_3rd_date_for_your_career_readiness_class_work}
                     onChange={(date) => updateField('choose_the_3rd_date_for_your_career_readiness_class_work', date)}
                     dateFormat="MM-dd-yyyy"
+                popperPlacement={DATE_PICKER_POPPER_PLACEMENT}
                     filterDate={isAllowedThirdClassDate}
                     dayClassName={getPastWorkshopDayClassName}
                     className="form-control"
@@ -561,6 +565,7 @@ function App() {
                 selected={form.date_of_birth}
                 onChange={(date) => updateField('date_of_birth', date)}
                 dateFormat="MM-dd-yyyy"
+                popperPlacement={DATE_PICKER_POPPER_PLACEMENT}
                 className="form-control"
                 placeholderText="MM - DD - YYYY"
                 maxDate={new Date()}
@@ -714,6 +719,7 @@ function App() {
                   selected={form.date_signed}
                   onChange={(date) => updateField('date_signed', date)}
                   dateFormat="MM-dd-yyyy"
+                popperPlacement={DATE_PICKER_POPPER_PLACEMENT}
                   className="form-control"
                   placeholderText="MM - DD - YYYY"
                   required
