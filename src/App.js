@@ -173,7 +173,8 @@ function formatHubSpotError(error) {
 function getHubSpotTrackingContext() {
   const hutk = document.cookie.match(/(?:^|;\s*)hubspotutk=([^;]+)/)?.[1] || '';
   const inIframe = window.self !== window.top;
-  const pageUri = (inIframe && document.referrer) ? document.referrer : window.location.href;
+  const rawPageUri = (inIframe && document.referrer) ? document.referrer : window.location.href;
+  const pageUri = rawPageUri.replace(/\/$/, '');
   const context = {
     page_uri: pageUri,
     page_name: document.title || 'Career Readiness Registration',
