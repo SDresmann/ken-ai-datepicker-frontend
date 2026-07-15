@@ -66,6 +66,71 @@ const maxWorkshopDate = new Date(workshopYear, 6, 31);
 const DATE_PICKER_POPPER_PLACEMENT = 'top-start';
 const DATE_PICKER_IFRAME_PLACEMENT = 'bottom-start';
 
+const HUBSPOT_PRIMARY_WORKSHOP_OPTIONS = [
+  'Tuesday, June 16th | 5pm-6pm',
+  'Friday, June 19th | 2pm-5pm',
+  'Tuesday, June 23rd | 5pm-6pm',
+  'Friday, June 26th | 2pm-5pm',
+  'Tuesday, June 30th | 5pm-6pm',
+  'Tuesday, July 7th | 5pm-6pm',
+  'Friday, July 10th | 2pm-5pm',
+  'Tuesday, July 14th | 5pm-6pm',
+  'Friday, July 17th | 2pm-5pm',
+  'Tuesday, July 21st | 5pm-6pm',
+  'Friday, July 24th | 2pm-5pm',
+  'Tuesday, July 28th | 5pm-6pm',
+  'Friday, July 31st | 2pm-5pm',
+];
+
+const HUBSPOT_SECOND_WORKSHOP_OPTIONS = [
+  'Wednesday, June 17th | 5pm-6pm',
+  'Wednesday, June 24th | 5pm-6pm',
+  'Wednesday, July 1st | 5pm-6pm',
+  'Wednesday, July 8th | 5pm-6pm',
+  'Wednesday, July 15th | 5pm-6pm',
+  'Wednesday, July 22nd | 5pm-6pm',
+  'Wednesday, July 29th | 5pm-6pm',
+];
+
+const HUBSPOT_THIRD_WORKSHOP_OPTIONS = [
+  'Thursday, June 18th | 5pm-6pm',
+  'Thursday, June 25th | 5pm-6pm',
+  'Thursday, July 2nd | 5pm-6pm',
+  'Thursday, July 9th | 5pm-6pm',
+  'Thursday, July 16th | 5pm-6pm',
+  'Thursday, July 23rd | 5pm-6pm',
+  'Thursday, July 30th | 5pm-6pm',
+];
+
+const WORKSHOP_MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+function workshopLabelToDate(label) {
+  const match = String(label).match(/,\s*([A-Za-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?/);
+  if (!match) return null;
+
+  const monthIndex = WORKSHOP_MONTH_NAMES.findIndex(
+    (month) => month.toLowerCase() === match[1].toLowerCase()
+  );
+  if (monthIndex < 0) return null;
+
+  return startOfDay(new Date(workshopYear, monthIndex, Number(match[2])));
+}
+
+function workshopDatesFromOptions(options) {
+  return new Set(options.map(workshopLabelToDate).filter(Boolean).map((date) => date.getTime()));
+}
+
+const hubspotPrimaryWorkshopDates = workshopDatesFromOptions(HUBSPOT_PRIMARY_WORKSHOP_OPTIONS);
+const hubspotSecondWorkshopDates = workshopDatesFromOptions(HUBSPOT_SECOND_WORKSHOP_OPTIONS);
+const hubspotThirdWorkshopDates = workshopDatesFromOptions(HUBSPOT_THIRD_WORKSHOP_OPTIONS);
+
+function isHubSpotWorkshopDate(date, allowedDates) {
+  return allowedDates.has(startOfDay(date).getTime());
+}
+
 function startOfDay(date) {
   const copy = new Date(date);
   copy.setHours(0, 0, 0, 0);
@@ -279,13 +344,11 @@ function App() {
   const isAllowedDate = (date) => {
     if (isBeforeEarliestBookableDate(date)) return false;
     if (startOfDay(date) > startOfDay(maxWorkshopDate)) return false;
-
-    const day = date.getDay();
-    return day === 2 || day === 5;
+    return isHubSpotWorkshopDate(date, hubspotPrimaryWorkshopDates);
   };
 
   const isAllowedSecondClassDate = (date) => {
-    if (date.getDay() !== 3) return false;
+    if (!isHubSpotWorkshopDate(date, hubspotSecondWorkshopDates)) return false;
     if (isBeforeEarliestBookableDate(date)) return false;
     if (startOfDay(date) > startOfDay(maxWorkshopDate)) return false;
 
@@ -296,7 +359,7 @@ function App() {
   };
 
   const isAllowedThirdClassDate = (date) => {
-    if (date.getDay() !== 4) return false;
+    if (!isHubSpotWorkshopDate(date, hubspotThirdWorkshopDates)) return false;
     if (isBeforeEarliestBookableDate(date)) return false;
     if (startOfDay(date) > startOfDay(maxWorkshopDate)) return false;
 
@@ -391,7 +454,14 @@ function App() {
       console.warn('HubSpot skipped custom properties:', response.data.skippedProperties);
     }
     if (response.data.hubspotFormSubmissionError) {
-      console.warn('HubSpot partial form submission failed:', response.data.hubspotFormSubmissionError);
+      const hubspotDetails = (response.data.hubspotFormSubmissionErrors || [])
+        .map((entry) => entry.message)
+        .filter(Boolean)
+        .join(' | ');
+      console.warn(
+        'HubSpot partial form submission failed:',
+        hubspotDetails || response.data.hubspotFormSubmissionError
+      );
     } else if (response.data.hubspotFormSubmission?.skipped) {
       console.warn('HubSpot partial form submission skipped:', response.data.hubspotFormSubmission.reason);
     } else if (response.data.hubspotFormSubmission?.ok) {
