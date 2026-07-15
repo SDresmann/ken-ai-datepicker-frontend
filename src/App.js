@@ -170,6 +170,29 @@ function formatHubSpotError(error) {
   ].filter(Boolean).join('\n\n');
 }
 
+function getHubSpotTrackingContext() {
+  const hutk = document.cookie.match(/(?:^|;\s*)hubspotutk=([^;]+)/)?.[1] || '';
+  const inIframe = window.self !== window.top;
+  const pageUri = (inIframe && document.referrer) ? document.referrer : window.location.href;
+  const context = {
+    page_uri: pageUri,
+    page_name: document.title || 'Career Readiness Registration',
+    hubspotutk: hutk,
+  };
+
+  try {
+    const params = new URLSearchParams(new URL(pageUri).search);
+    ['utm_campaign', 'utm_medium', 'utm_source', 'utm_term', 'utm_content'].forEach((key) => {
+      const value = params.get(key);
+      if (value) context[key] = value;
+    });
+  } catch {
+    // Ignore URL parsing issues in older browsers.
+  }
+
+  return context;
+}
+
 function buildFormPayload(formData, { formStatus } = {}) {
   const workshopDate = formData.which_career_readiness_date_are_you_interested_in_attending_work;
   const date = workshopDate && moment(workshopDate).isValid()
@@ -222,6 +245,7 @@ function buildFormPayload(formData, { formStatus } = {}) {
     are_you_unemployed: formData.are_you_unemployed,
     career_readiness_form_status: formStatus || '',
     date,
+    ...getHubSpotTrackingContext(),
   };
 }
 
