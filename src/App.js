@@ -390,6 +390,13 @@ function App() {
     if (response.data.skippedProperties?.length) {
       console.warn('HubSpot skipped custom properties:', response.data.skippedProperties);
     }
+    if (response.data.hubspotFormSubmissionError) {
+      console.warn('HubSpot partial form submission failed:', response.data.hubspotFormSubmissionError);
+    } else if (response.data.hubspotFormSubmission?.skipped) {
+      console.warn('HubSpot partial form submission skipped:', response.data.hubspotFormSubmission.reason);
+    } else if (response.data.hubspotFormSubmission?.ok) {
+      console.log('HubSpot partial form submission recorded:', response.data.hubspotFormSubmission);
+    }
     return response.data;
   };
 
@@ -482,8 +489,12 @@ function App() {
         setHubspotError(hubspotDetail);
         alert(`Your workshop was booked, but HubSpot did not fully save: ${hubspotDetail}`);
       }
-      if (response.data.confirmationEmailError) {
-        alert(`Your application was saved, but the confirmation email may not have sent: ${response.data.confirmationEmailError}`);
+      if (response.data.hubspotFormSubmission?.skipped) {
+        console.warn('HubSpot complete form submission skipped:', response.data.hubspotFormSubmission.reason);
+      } else if (response.data.hubspotFormSubmission?.ok === false) {
+        console.warn('HubSpot complete form submission failed:', response.data.hubspotFormSubmission.detail);
+      } else if (response.data.hubspotFormSubmission?.ok) {
+        console.log('HubSpot complete form submission recorded:', response.data.hubspotFormSubmission);
       }
       if (response.data.signupEmailError) {
         console.warn('Staff notification email failed:', response.data.signupEmailError);
@@ -856,7 +867,7 @@ function App() {
       {isSubmitted ? (
         <section className="survey-card thank-you-card">
           <h1>Thank you for applying</h1>
-          <p>We&apos;ve received your information, and you&apos;ll receive a confirmation email shortly with next steps.</p>
+          <p>We&apos;ve received your information. Our team will be in touch with next steps.</p>
         </section>
       ) : (
       <form className="survey-card" onSubmit={handleSubmit}>
