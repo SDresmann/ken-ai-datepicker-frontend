@@ -53,6 +53,13 @@ const states = ['OH', 'KY', 'IN', 'MI', 'PA', 'Other'];
 const genderOptions = ['Female', 'Male', 'Non-binary', 'Prefer not to say', 'Other'];
 const ethnicityOptions = ['American Indian or Alaska Native', 'Asian', 'Black or African American', 'Hispanic or Latino', 'White', 'Two or more races', 'Prefer not to say'];
 const yesNo = ['Yes', 'No'];
+const unemployedStatusOptions = [
+  'Dislocated Worker',
+  'Fired or Terminated',
+  'First Time Job Seeker',
+  'Position Eliminated',
+  'Voluntarily Left Previous Job',
+];
 const noneOption = 'NONE OF THESE APPLY TO ME';
 const workshopYear = new Date().getFullYear();
 const maxWorkshopDate = new Date(workshopYear, 6, 31);
@@ -482,10 +489,10 @@ function App() {
     }
   };
 
-  const renderSelect = (name, label, options) => (
+  const renderSelect = (name, label, options, { required = true } = {}) => (
     <label className="field">
-      <span>{label}<sup>*</sup></span>
-      <select value={form[name]} onChange={(e) => updateField(name, e.target.value)} required>
+      <span>{label}{required ? <sup>*</sup> : null}</span>
+      <select value={form[name]} onChange={(e) => updateField(name, e.target.value)} required={required}>
         <option value=""></option>
         {options.map((option) => (
           <option key={option} value={option}>{option}</option>
@@ -827,7 +834,7 @@ function App() {
               "I'm working but not getting enough hours or making what I should be making for my education and skills.",
               "I'm NOT working but I want to work",
             ])}
-            {renderSelect('are_you_unemployed', 'Are you unemployed?', yesNo)}
+            {renderSelect('are_you_unemployed', 'Are you unemployed?', unemployedStatusOptions, { required: false })}
           </>
         );
       default:
