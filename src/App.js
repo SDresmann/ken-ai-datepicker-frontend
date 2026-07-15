@@ -45,6 +45,7 @@ const emptyForm = {
   i_consent_to_the_irrevocable_right_to_use_my_name__or_a_fictional_name___statement_s__story__photog: false,
   digital_signature: '',
   date_signed: null,
+  whats_your_employment_status_pick_only_1: '',
   are_you_unemployed: '',
 };
 
@@ -146,6 +147,7 @@ function buildFormPayload(formData, { formStatus } = {}) {
     digital_signature: formData.digital_signature,
     date_signed: formData.date_signed ? moment(formData.date_signed).format('YYYY-MM-DD') : '',
     whats_your_employment_status_pick_only_1: formData.whats_your_employment_status_pick_only_1,
+    are_you_unemployed: formData.are_you_unemployed,
     career_readiness_form_status: formStatus || '',
     date,
   };
@@ -465,7 +467,10 @@ function App() {
       const response = await axios.post(`${API_URL}/api/bookings`, payload);
       console.log('Booked:', response.data, form);
       if (response.data.hubspotError) {
-        alert(`Your workshop was booked, but some HubSpot fields may not have saved: ${response.data.hubspotError}`);
+        const hubspotDetail = formatHubSpotError({ response: { data: response.data.hubspotErrorDetail || {} } })
+          || response.data.hubspotError;
+        setHubspotError(hubspotDetail);
+        alert(`Your workshop was booked, but HubSpot did not fully save: ${hubspotDetail}`);
       }
       setIsSubmitted(true);
     } catch (error) {
@@ -518,7 +523,7 @@ function App() {
           <>
             <h1>KA | Ready.Set.Hire.</h1>
             <h2 className="section-heading">Contact Details</h2>
-            <div className="two-column">
+            <div className="two-column name-row">
               <label className="field">
                 <span>First Name<sup>*</sup></span>
                 <input name="first_name" value={form.first_name} onChange={(e) => updateField('first_name', e.target.value)} required />
@@ -822,6 +827,7 @@ function App() {
               "I'm working but not getting enough hours or making what I should be making for my education and skills.",
               "I'm NOT working but I want to work",
             ])}
+            {renderSelect('are_you_unemployed', 'Are you unemployed?', yesNo)}
           </>
         );
       default:

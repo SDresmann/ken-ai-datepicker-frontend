@@ -158,6 +158,10 @@ select {
   grid-template-columns: repeat(2, 1fr);
 }
 
+.name-row {
+  gap: 20px;
+}
+
 .three-column {
   grid-template-columns: 1fr 1fr 1fr;
 }
@@ -237,7 +241,7 @@ button:disabled {
     font-size: 28px;
   }
 
-  .two-column,
+  .two-column:not(.name-row),
   .three-column {
     grid-template-columns: 1fr;
     gap: 0;
