@@ -46,20 +46,12 @@ const emptyForm = {
   digital_signature: '',
   date_signed: null,
   whats_your_employment_status_pick_only_1: '',
-  are_you_unemployed: '',
 };
 
 const states = ['OH', 'KY', 'IN', 'MI', 'PA', 'Other'];
-const genderOptions = ['Female', 'Male', 'Non-binary', 'Prefer not to say', 'Other'];
+const genderOptions = ['Female', 'Male', 'Prefer Not to Answer'];
 const ethnicityOptions = ['American Indian or Alaska Native', 'Asian', 'Black or African American', 'Hispanic or Latino', 'White', 'Two or more races', 'Prefer not to say'];
 const yesNo = ['Yes', 'No'];
-const unemployedStatusOptions = [
-  'Dislocated Worker',
-  'Fired or Terminated',
-  'First Time Job Seeker',
-  'Position Eliminated',
-  'Voluntarily Left Previous Job',
-];
 const noneOption = 'NONE OF THESE APPLY TO ME';
 const workshopYear = new Date().getFullYear();
 const maxWorkshopDate = new Date(workshopYear, 6, 31);
@@ -194,6 +186,42 @@ function getHubSpotTrackingContext() {
   return context;
 }
 
+async function submitHubSpotFormFromBrowser(payload) {
+  if (!payload || payload.skipped) {
+    return payload || { skipped: true, reason: 'HubSpot form submission payload is missing' };
+  }
+
+  const { portalId, formGuid, fields, context, stage } = payload;
+  const tracking = getHubSpotTrackingContext();
+  const submissionContext = {
+    ...context,
+    pageUri: context.pageUri || tracking.page_uri,
+  };
+  const hutk = context.hutk || tracking.hubspotutk;
+  if (hutk) {
+    submissionContext.hutk = hutk;
+  }
+
+  const response = await axios.post(
+    `https://api.hsforms.com/submissions/v3/integration/submit/${portalId}/${formGuid}`,
+    {
+      submittedAt: Date.now(),
+      fields,
+      context: submissionContext,
+    }
+  );
+
+  return {
+    ok: true,
+    stage,
+    formGuid,
+    portalId,
+    fieldsSubmitted: fields.length,
+    submission: response.data,
+    submittedFromBrowser: true,
+  };
+}
+
 function buildFormPayload(formData, { formStatus } = {}) {
   const workshopDate = formData.which_career_readiness_date_are_you_interested_in_attending_work;
   const date = workshopDate && moment(workshopDate).isValid()
@@ -243,7 +271,6 @@ function buildFormPayload(formData, { formStatus } = {}) {
     digital_signature: formData.digital_signature,
     date_signed: formData.date_signed ? moment(formData.date_signed).format('YYYY-MM-DD') : '',
     whats_your_employment_status_pick_only_1: formData.whats_your_employment_status_pick_only_1,
-    are_you_unemployed: formData.are_you_unemployed,
     career_readiness_form_status: formStatus || '',
     date,
     ...getHubSpotTrackingContext(),
@@ -488,6 +515,18 @@ function App() {
         hubspotDetails || response.data.hubspotFormSubmissionError,
         response.data.hubspotFormGuid ? `(form ${response.data.hubspotFormGuid})` : ''
       );
+    } else if (response.data.hubspotFormSubmissionPayload?.skipped) {
+      console.warn('HubSpot partial form submission skipped:', response.data.hubspotFormSubmissionPayload.reason);
+    } else if (response.data.hubspotFormSubmissionPayload?.fields?.length) {
+      try {
+        const hubspotFormSubmission = await submitHubSpotFormFromBrowser(response.data.hubspotFormSubmissionPayload);
+        console.log('HubSpot partial form submission recorded:', hubspotFormSubmission);
+      } catch (error) {
+        const hubspotDetails = error.response?.data?.errors?.map((entry) => entry.message).filter(Boolean).join(' | ')
+          || error.response?.data?.message
+          || error.message;
+        console.warn('HubSpot partial form submission failed:', hubspotDetails);
+      }
     } else if (response.data.hubspotFormSubmission?.skipped) {
       console.warn('HubSpot partial form submission skipped:', response.data.hubspotFormSubmission.reason);
     } else if (response.data.hubspotFormSubmission?.ok) {
@@ -585,7 +624,19 @@ function App() {
         setHubspotError(hubspotDetail);
         alert(`Your workshop was booked, but HubSpot did not fully save: ${hubspotDetail}`);
       }
-      if (response.data.hubspotFormSubmission?.skipped) {
+      if (response.data.hubspotFormSubmissionPayload?.skipped) {
+        console.warn('HubSpot complete form submission skipped:', response.data.hubspotFormSubmissionPayload.reason);
+      } else if (response.data.hubspotFormSubmissionPayload?.fields?.length) {
+        try {
+          const hubspotFormSubmission = await submitHubSpotFormFromBrowser(response.data.hubspotFormSubmissionPayload);
+          console.log('HubSpot complete form submission recorded:', hubspotFormSubmission);
+        } catch (error) {
+          const hubspotDetails = error.response?.data?.errors?.map((entry) => entry.message).filter(Boolean).join(' | ')
+            || error.response?.data?.message
+            || error.message;
+          console.warn('HubSpot complete form submission failed:', hubspotDetails);
+        }
+      } else if (response.data.hubspotFormSubmission?.skipped) {
         console.warn('HubSpot complete form submission skipped:', response.data.hubspotFormSubmission.reason);
       } else if (response.data.hubspotFormSubmission?.ok === false) {
         console.warn('HubSpot complete form submission failed:', response.data.hubspotFormSubmission.detail);
@@ -950,7 +1001,6 @@ function App() {
               "I'm working but not getting enough hours or making what I should be making for my education and skills.",
               "I'm NOT working but I want to work",
             ])}
-            {renderSelect('are_you_unemployed', 'Are you unemployed?', unemployedStatusOptions, { required: false })}
           </>
         );
       default:
