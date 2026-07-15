@@ -56,6 +56,7 @@ const noneOption = 'NONE OF THESE APPLY TO ME';
 const workshopYear = new Date().getFullYear();
 const maxWorkshopDate = new Date(workshopYear, 6, 31);
 const DATE_PICKER_POPPER_PLACEMENT = 'top-start';
+const DATE_PICKER_IFRAME_PLACEMENT = 'bottom-start';
 
 function startOfDay(date) {
   const copy = new Date(date);
@@ -158,6 +159,10 @@ function App() {
   const [hubspotError, setHubspotError] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [openDatePicker, setOpenDatePicker] = useState(null);
+  const [isInIframe, setIsInIframe] = useState(false);
+  const datePickerPopperPlacement = isInIframe
+    ? DATE_PICKER_IFRAME_PLACEMENT
+    : DATE_PICKER_POPPER_PLACEMENT;
 
   const createDatePickerHandlers = (pickerId, onDateChange) => ({
     open: openDatePicker === pickerId,
@@ -170,44 +175,8 @@ function App() {
   });
 
   useEffect(() => {
-    const isEmbedded = window.self !== window.top;
-    if (!isEmbedded) return;
-
-    document.documentElement.classList.add('in-iframe');
-
-    const notifyParentOfHeight = () => {
-      const height = Math.ceil(document.documentElement.scrollHeight + 32);
-      window.parent.postMessage(
-        { type: 'ken-datepicker-resize', height },
-        '*'
-      );
-    };
-
-    notifyParentOfHeight();
-
-    const resizeObserver = new ResizeObserver(() => {
-      notifyParentOfHeight();
-    });
-    resizeObserver.observe(document.body);
-
-    window.addEventListener('resize', notifyParentOfHeight);
-
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener('resize', notifyParentOfHeight);
-      document.documentElement.classList.remove('in-iframe');
-    };
+    setIsInIframe(window.self !== window.top);
   }, []);
-
-  useEffect(() => {
-    if (window.self === window.top) return;
-
-    const height = Math.ceil(document.documentElement.scrollHeight + 32);
-    window.parent.postMessage(
-      { type: 'ken-datepicker-resize', height },
-      '*'
-    );
-  }, [step, form.which_career_readiness_date_are_you_interested_in_attending_work, form.choose_the_2nd_date_for_your_career_readiness_class_work, form.choose_the_3rd_date_for_your_career_readiness_class_work, openDatePicker, isSubmitted, hubspotError]);
 
   const updateField = (name, value) => {
     setForm((current) => ({ ...current, [name]: value }));
@@ -542,7 +511,7 @@ function App() {
                 {...createDatePickerHandlers('workshop-primary', updateClassDate)}
                 selected={form.which_career_readiness_date_are_you_interested_in_attending_work}
                 dateFormat="MM-dd-yyyy"
-                popperPlacement={DATE_PICKER_POPPER_PLACEMENT}
+                popperPlacement={datePickerPopperPlacement}
                 shouldCloseOnSelect
                 filterDate={isAllowedDate}
                 dayClassName={getPastWorkshopDayClassName}
@@ -562,7 +531,7 @@ function App() {
                     {...createDatePickerHandlers('workshop-second', updateSecondClassDate)}
                     selected={form.choose_the_2nd_date_for_your_career_readiness_class_work}
                     dateFormat="MM-dd-yyyy"
-                    popperPlacement={DATE_PICKER_POPPER_PLACEMENT}
+                    popperPlacement={datePickerPopperPlacement}
                     shouldCloseOnSelect
                     filterDate={isAllowedSecondClassDate}
                     dayClassName={getPastWorkshopDayClassName}
@@ -582,7 +551,7 @@ function App() {
                     )}
                     selected={form.choose_the_3rd_date_for_your_career_readiness_class_work}
                     dateFormat="MM-dd-yyyy"
-                    popperPlacement={DATE_PICKER_POPPER_PLACEMENT}
+                    popperPlacement={datePickerPopperPlacement}
                     shouldCloseOnSelect
                     filterDate={isAllowedThirdClassDate}
                     dayClassName={getPastWorkshopDayClassName}
@@ -627,7 +596,7 @@ function App() {
                 {...createDatePickerHandlers('date-of-birth', (date) => updateField('date_of_birth', date))}
                 selected={form.date_of_birth}
                 dateFormat="MM-dd-yyyy"
-                popperPlacement={DATE_PICKER_POPPER_PLACEMENT}
+                popperPlacement={datePickerPopperPlacement}
                 shouldCloseOnSelect
                 className="form-control"
                 placeholderText="MM - DD - YYYY"
@@ -782,7 +751,7 @@ function App() {
                   {...createDatePickerHandlers('date-signed', (date) => updateField('date_signed', date))}
                   selected={form.date_signed}
                   dateFormat="MM-dd-yyyy"
-                  popperPlacement={DATE_PICKER_POPPER_PLACEMENT}
+                  popperPlacement={datePickerPopperPlacement}
                   shouldCloseOnSelect
                   className="form-control"
                   placeholderText="MM - DD - YYYY"
