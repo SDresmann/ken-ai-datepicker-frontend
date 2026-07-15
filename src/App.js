@@ -382,7 +382,10 @@ function App() {
     }
 
     console.log('HubSpot sync payload:', payload);
-    const response = await axios.post(`${API_URL}/api/bookings/hubspot-step-one`, payload);
+    const response = await axios.post(`${API_URL}/api/bookings/hubspot-step-one`, {
+      ...payload,
+      current_step: step,
+    });
     console.log('HubSpot sync saved:', response.data);
     if (response.data.skippedProperties?.length) {
       console.warn('HubSpot skipped custom properties:', response.data.skippedProperties);
@@ -478,6 +481,12 @@ function App() {
           || response.data.hubspotError;
         setHubspotError(hubspotDetail);
         alert(`Your workshop was booked, but HubSpot did not fully save: ${hubspotDetail}`);
+      }
+      if (response.data.confirmationEmailError) {
+        alert(`Your application was saved, but the confirmation email may not have sent: ${response.data.confirmationEmailError}`);
+      }
+      if (response.data.signupEmailError) {
+        console.warn('Staff notification email failed:', response.data.signupEmailError);
       }
       setIsSubmitted(true);
     } catch (error) {
