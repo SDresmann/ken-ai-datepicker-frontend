@@ -460,7 +460,8 @@ function App() {
         .join(' | ');
       console.warn(
         'HubSpot partial form submission failed:',
-        hubspotDetails || response.data.hubspotFormSubmissionError
+        hubspotDetails || response.data.hubspotFormSubmissionError,
+        response.data.hubspotFormGuid ? `(form ${response.data.hubspotFormGuid})` : ''
       );
     } else if (response.data.hubspotFormSubmission?.skipped) {
       console.warn('HubSpot partial form submission skipped:', response.data.hubspotFormSubmission.reason);
