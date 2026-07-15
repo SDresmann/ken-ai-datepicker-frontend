@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import moment from 'moment';
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
@@ -157,6 +157,57 @@ function App() {
   const [isSavingStepOne, setIsSavingStepOne] = useState(false);
   const [hubspotError, setHubspotError] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [openDatePicker, setOpenDatePicker] = useState(null);
+
+  const createDatePickerHandlers = (pickerId, onDateChange) => ({
+    open: openDatePicker === pickerId,
+    onInputClick: () => setOpenDatePicker(pickerId),
+    onClickOutside: () => setOpenDatePicker(null),
+    onChange: (date) => {
+      onDateChange(date);
+      setOpenDatePicker(null);
+    },
+  });
+
+  useEffect(() => {
+    const isEmbedded = window.self !== window.top;
+    if (!isEmbedded) return;
+
+    document.documentElement.classList.add('in-iframe');
+
+    const notifyParentOfHeight = () => {
+      const height = Math.ceil(document.documentElement.scrollHeight + 32);
+      window.parent.postMessage(
+        { type: 'ken-datepicker-resize', height },
+        '*'
+      );
+    };
+
+    notifyParentOfHeight();
+
+    const resizeObserver = new ResizeObserver(() => {
+      notifyParentOfHeight();
+    });
+    resizeObserver.observe(document.body);
+
+    window.addEventListener('resize', notifyParentOfHeight);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', notifyParentOfHeight);
+      document.documentElement.classList.remove('in-iframe');
+    };
+  }, []);
+
+  useEffect(() => {
+    if (window.self === window.top) return;
+
+    const height = Math.ceil(document.documentElement.scrollHeight + 32);
+    window.parent.postMessage(
+      { type: 'ken-datepicker-resize', height },
+      '*'
+    );
+  }, [step, form.which_career_readiness_date_are_you_interested_in_attending_work, form.choose_the_2nd_date_for_your_career_readiness_class_work, form.choose_the_3rd_date_for_your_career_readiness_class_work, openDatePicker, isSubmitted, hubspotError]);
 
   const updateField = (name, value) => {
     setForm((current) => ({ ...current, [name]: value }));
@@ -352,6 +403,7 @@ function App() {
       setIsSavingStepOne(true);
       setHubspotError('');
       await syncToHubSpot();
+      setOpenDatePicker(null);
       setStep((current) => Math.min(current + 1, TOTAL_STEPS));
     } catch (error) {
       const formatted = formatHubSpotError(error);
@@ -366,7 +418,10 @@ function App() {
       setIsSavingStepOne(false);
     }
   };
-  const goBack = () => setStep((current) => Math.max(current - 1, 1));
+  const goBack = () => {
+    setOpenDatePicker(null);
+    setStep((current) => Math.max(current - 1, 1));
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -436,6 +491,7 @@ function App() {
         const showAdditionalClassDates = needsAdditionalClassDates();
         return (
           <>
+            <h1>KA | Ready.Set.Hire.</h1>
             <h2 className="section-heading">Contact Details</h2>
             <div className="two-column">
               <label className="field">
@@ -483,10 +539,11 @@ function App() {
             <label className="field">
               <span>Which Career Readiness Date Are You Interested in Attending?<sup>*</sup></span>
               <DatePicker
+                {...createDatePickerHandlers('workshop-primary', updateClassDate)}
                 selected={form.which_career_readiness_date_are_you_interested_in_attending_work}
-                onChange={updateClassDate}
                 dateFormat="MM-dd-yyyy"
                 popperPlacement={DATE_PICKER_POPPER_PLACEMENT}
+                shouldCloseOnSelect
                 filterDate={isAllowedDate}
                 dayClassName={getPastWorkshopDayClassName}
                 className="form-control"
@@ -502,10 +559,11 @@ function App() {
                 <label className="field">
                   <span>Choose the 2nd Date for your Career Readiness Workshop:<sup>*</sup></span>
                   <DatePicker
+                    {...createDatePickerHandlers('workshop-second', updateSecondClassDate)}
                     selected={form.choose_the_2nd_date_for_your_career_readiness_class_work}
-                    onChange={updateSecondClassDate}
                     dateFormat="MM-dd-yyyy"
-                popperPlacement={DATE_PICKER_POPPER_PLACEMENT}
+                    popperPlacement={DATE_PICKER_POPPER_PLACEMENT}
+                    shouldCloseOnSelect
                     filterDate={isAllowedSecondClassDate}
                     dayClassName={getPastWorkshopDayClassName}
                     className="form-control"
@@ -518,10 +576,14 @@ function App() {
                 <label className="field">
                   <span>Choose the 3rd Date for your Career Readiness Workshop:<sup>*</sup></span>
                   <DatePicker
+                    {...createDatePickerHandlers(
+                      'workshop-third',
+                      (date) => updateField('choose_the_3rd_date_for_your_career_readiness_class_work', date)
+                    )}
                     selected={form.choose_the_3rd_date_for_your_career_readiness_class_work}
-                    onChange={(date) => updateField('choose_the_3rd_date_for_your_career_readiness_class_work', date)}
                     dateFormat="MM-dd-yyyy"
-                popperPlacement={DATE_PICKER_POPPER_PLACEMENT}
+                    popperPlacement={DATE_PICKER_POPPER_PLACEMENT}
+                    shouldCloseOnSelect
                     filterDate={isAllowedThirdClassDate}
                     dayClassName={getPastWorkshopDayClassName}
                     className="form-control"
@@ -562,10 +624,11 @@ function App() {
             <label className="field">
               <span>Date of Birth<sup>*</sup></span>
               <DatePicker
+                {...createDatePickerHandlers('date-of-birth', (date) => updateField('date_of_birth', date))}
                 selected={form.date_of_birth}
-                onChange={(date) => updateField('date_of_birth', date)}
                 dateFormat="MM-dd-yyyy"
                 popperPlacement={DATE_PICKER_POPPER_PLACEMENT}
+                shouldCloseOnSelect
                 className="form-control"
                 placeholderText="MM - DD - YYYY"
                 maxDate={new Date()}
@@ -716,10 +779,11 @@ function App() {
               <label className="field">
                 <span>Date Signed<sup>*</sup></span>
                 <DatePicker
+                  {...createDatePickerHandlers('date-signed', (date) => updateField('date_signed', date))}
                   selected={form.date_signed}
-                  onChange={(date) => updateField('date_signed', date)}
                   dateFormat="MM-dd-yyyy"
-                popperPlacement={DATE_PICKER_POPPER_PLACEMENT}
+                  popperPlacement={DATE_PICKER_POPPER_PLACEMENT}
+                  shouldCloseOnSelect
                   className="form-control"
                   placeholderText="MM - DD - YYYY"
                   required
@@ -744,12 +808,11 @@ function App() {
     <main className="app-shell">
       {isSubmitted ? (
         <section className="survey-card thank-you-card">
-          <h1>Thank you for submitting</h1>
-          <p>We received your form and booked your selected workshop date.</p>
+          <h1>Thank you for applying</h1>
+          <p>We&apos;ve received your information, and you&apos;ll receive a confirmation email shortly with next steps.</p>
         </section>
       ) : (
       <form className="survey-card" onSubmit={handleSubmit}>
-        <h1>KA | Ready.Set.Hire.</h1>
         <div className="step-content">{renderStep()}</div>
         {hubspotError ? (
           <div className="form-error" role="alert">
