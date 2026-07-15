@@ -175,8 +175,64 @@ function App() {
   });
 
   useEffect(() => {
-    setIsInIframe(window.self !== window.top);
+    const embedded = window.self !== window.top;
+    setIsInIframe(embedded);
+
+    if (!embedded) return undefined;
+
+    document.documentElement.classList.add('in-iframe');
+
+    let resizeTimer;
+    const notifyParentOfHeight = () => {
+      const root = document.getElementById('root');
+      const height = Math.ceil((root?.scrollHeight || document.body.scrollHeight) + 24);
+      if (height < 400) return;
+
+      window.parent.postMessage(
+        { type: 'ken-datepicker-resize', height },
+        '*'
+      );
+    };
+
+    const scheduleHeightUpdate = () => {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        window.requestAnimationFrame(notifyParentOfHeight);
+      }, 100);
+    };
+
+    scheduleHeightUpdate();
+
+    const resizeObserver = new ResizeObserver(scheduleHeightUpdate);
+    if (document.getElementById('root')) {
+      resizeObserver.observe(document.getElementById('root'));
+    }
+
+    window.addEventListener('resize', scheduleHeightUpdate);
+
+    return () => {
+      window.clearTimeout(resizeTimer);
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', scheduleHeightUpdate);
+      document.documentElement.classList.remove('in-iframe');
+    };
   }, []);
+
+  useEffect(() => {
+    if (!isInIframe) return undefined;
+
+    const root = document.getElementById('root');
+    if (!root) return undefined;
+
+    const timer = window.setTimeout(() => {
+      const height = Math.ceil(root.scrollHeight + 24);
+      if (height >= 400) {
+        window.parent.postMessage({ type: 'ken-datepicker-resize', height }, '*');
+      }
+    }, 100);
+
+    return () => window.clearTimeout(timer);
+  }, [step, form.which_career_readiness_date_are_you_interested_in_attending_work, form.choose_the_2nd_date_for_your_career_readiness_class_work, form.choose_the_3rd_date_for_your_career_readiness_class_work, openDatePicker, isSubmitted, hubspotError, isInIframe]);
 
   const updateField = (name, value) => {
     setForm((current) => ({ ...current, [name]: value }));

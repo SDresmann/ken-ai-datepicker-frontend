@@ -243,3 +243,16 @@ button:disabled {
     gap: 0;
   }
 }
+
+html.in-iframe body {
+  background: transparent;
+}
+
+html.in-iframe .app-shell {
+  min-height: auto;
+  padding: 24px 16px;
+}
+
+html.in-iframe .step-content {
+  min-height: 0;
+}
