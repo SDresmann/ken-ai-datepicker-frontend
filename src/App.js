@@ -710,7 +710,7 @@ function App() {
                 maxDate={getLatestBookableDate()}
                 required
               />
-              <small>Tuesday and Thursday workshops are from 5:00 pm - 7:00 pm cst. See below for more details.</small>
+              <small>Tuesday and Thursday workshops are from 4:00 pm - 6:00 pm cst. See below for more details.</small>
             </label>
             {showAdditionalClassDates && (
               <>
