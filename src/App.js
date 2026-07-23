@@ -649,7 +649,6 @@ function App() {
         const showAdditionalClassDates = needsAdditionalClassDates();
         return (
           <>
-            <h1>KA | Ready.Set.Hire.</h1>
             <h2 className="section-heading">Contact Details</h2>
             <div className="two-column name-row">
               <label className="field">
