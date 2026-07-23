@@ -692,7 +692,7 @@ function App() {
                 onChange={(e) => updateField('marketing_message_consent', e.target.checked)}
                 required
               />
-              I agree to receive recurring automated marketing emails and text messages at the phone number provided. Consent is not a condition to purchase. Msg &amp; data rates may apply. Msg frequency varies. Reply HELP for help and STOP to cancel. View our Terms and Conditions and Privacy Policy.<sup>*</sup>
+              I agree to receive recurring automated marketing emails and text messages at the phone number provided. I can opt out at any time. Msg &amp; data rates may apply. Msg frequency varies. Reply HELP for help and STOP to cancel. View our Terms and Conditions and Privacy Policy.<sup>*</sup>
             </label>
             <label className="field">
               <span>Which Career Readiness Date Are You Interested in Attending?<sup>*</sup></span>
