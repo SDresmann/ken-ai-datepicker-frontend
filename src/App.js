@@ -77,12 +77,21 @@ function getLatestBookableDate() {
   return addDays(startOfDay(new Date()), BOOKING_WINDOW_DAYS);
 }
 
+function getEndOfCurrentWeek() {
+  const today = startOfDay(new Date());
+  return addDays(today, 6 - today.getDay());
+}
+
 function isBeforeEarliestBookableDate(date) {
   return startOfDay(date) < getEarliestBookableDate();
 }
 
 function isAfterLatestBookableDate(date) {
   return startOfDay(date) > getLatestBookableDate();
+}
+
+function isAfterCurrentWeek(date) {
+  return startOfDay(date) > getEndOfCurrentWeek();
 }
 
 function getPastWorkshopDayClassName(date) {
@@ -340,7 +349,7 @@ function App() {
     if (isAfterLatestBookableDate(date)) return false;
 
     const day = date.getDay();
-    return day === 2 || day === 5;
+    return day === 2 || day === 4;
   };
 
   const isAllowedSecondClassDate = (date) => {
@@ -388,9 +397,10 @@ function App() {
   };
 
   const needsAdditionalClassDates = () => {
-    if (!form.which_career_readiness_date_are_you_interested_in_attending_work) return false;
-    const day = form.which_career_readiness_date_are_you_interested_in_attending_work.getDay();
-    return day === 2;
+    const selectedDate = form.which_career_readiness_date_are_you_interested_in_attending_work;
+    if (!selectedDate) return false;
+
+    return selectedDate.getDay() === 2 && !isAfterCurrentWeek(selectedDate);
   };
 
   const requireCheckboxGroup = (name, message) => {
@@ -491,12 +501,12 @@ function App() {
       }
 
       if (!moment(form.which_career_readiness_date_are_you_interested_in_attending_work).isValid()) {
-        alert('Please choose a valid workshop date (Tuesday or Friday).');
+        alert('Please choose a valid workshop date (Tuesday or Thursday).');
         return;
       }
 
       if (!isAllowedDate(form.which_career_readiness_date_are_you_interested_in_attending_work)) {
-        alert('The first workshop date must be a Tuesday or Friday.');
+        alert('The first workshop date must be a Tuesday or Thursday.');
         return;
       }
 
@@ -700,7 +710,7 @@ function App() {
                 maxDate={getLatestBookableDate()}
                 required
               />
-              <small>Tuesday workshops are from 5:00 pm - 6:00 pm cst and Friday workshops are from 2:00 pm - 5:00 pm cst. See below for more details.</small>
+              <small>Tuesday and Thursday workshops are from 5:00 pm - 7:00 pm cst. See below for more details.</small>
             </label>
             {showAdditionalClassDates && (
               <>
